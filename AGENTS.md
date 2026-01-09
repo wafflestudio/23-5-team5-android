@@ -6,10 +6,10 @@ A mobile web application for university students to recruit team members. Users 
 
 ## Tech Stack
 
-- **Frontend**: React, TypeScript
-- **Styling**: Tailwind CSS v4
-- **Icons**: lucide-react
-- **State Management**: React useState (local state management)
+- **Frontend**: 
+- **Styling**: 
+- **Icons**: 
+- **State Management**: 
 - **Data Storage**: Currently Mock Data (frontend-only)
 
 ## Key Features
@@ -43,65 +43,6 @@ A mobile web application for university students to recruit team members. Users 
 
 ## File Structure
 
-```
-/
-├── App.tsx                           # Main app component (routing, state management)
-├── types/
-│   └── index.ts                      # TypeScript type definitions
-├── components/
-│   ├── Login.tsx                     # Login page
-│   ├── Signup.tsx                    # Sign up page (3 steps)
-│   ├── PostList.tsx                  # Post list page (search, filter)
-│   ├── PostCard.tsx                  # Post card component
-│   ├── PostDetail.tsx                # Post detail page
-│   ├── CreatePostModal.tsx           # Create post modal
-│   ├── MyPosts.tsx                   # My created posts page
-│   └── MyPage.tsx                    # My page
-├── data/
-│   └── mockData.ts                   # Mock user and post data
-└── styles/
-    └── globals.css                   # Global styles
-```
-
-## Data Models
-
-### User
-```typescript
-interface User {
-  id: string;
-  nickname: string;
-  email: string;
-  profileImage?: string;
-}
-```
-
-### Post
-```typescript
-interface Post {
-  id: string;
-  category: Category;          // '스터디' | '고시' | '취준' | '대외활동'
-  title: string;
-  field?: string;               // Field of study/interest
-  date?: string;                // Date/time
-  location?: string;            // Location
-  description: string;          // Description
-  authorId: string;
-  authorName: string;
-  authorEmail: string;
-  createdAt: string;
-  participants: Participant[];
-  isClosed?: boolean;           // Whether post is closed
-}
-```
-
-### Participant
-```typescript
-interface Participant {
-  userId: string;
-  nickname: string;
-  email: string;
-}
-```
 
 ## Database Schema (For Backend Implementation)
 
@@ -233,16 +174,6 @@ const handleClosePost = (postId: string) => {
 
 ## State Management
 
-Currently all state is managed in `App.tsx`:
-- `authView`: Current auth screen ('login' | 'signup' | 'main')
-- `currentUser`: Currently logged-in user info
-- `activeTab`: Current active tab ('home' | 'myposts' | 'mypage')
-- `posts`: Complete post list
-
-Considerations for backend integration:
-- Recommend using React Query or SWR
-- Separate server state from client state
-- Authentication token management (JWT, localStorage/sessionStorage)
 
 ## UI/UX Features
 
@@ -276,19 +207,13 @@ Considerations for backend integration:
 ## Development Guide
 
 ### Adding New Features
-1. Define types in `/types/index.ts`
-2. Create component in `/components`
-3. Manage state and pass props in `App.tsx`
-4. Add mock data in `/data/mockData.ts` if needed
+
 
 ### Styling
-- Use Tailwind CSS utility classes
-- Define custom colors in `/styles/globals.css`
-- Responsive: Use `sm:`, `md:`, `lg:` breakpoints
+
 
 ### Icons
-- Use `lucide-react` library
-- Consistent sizes: `w-4 h-4`, `w-5 h-5`, `w-6 h-6`
+
 
 ## Future Improvements
 
@@ -331,17 +256,10 @@ These values are displayed in Korean in the UI but can be translated or localize
 - ⏳ Real database connection pending
 
 ### When Modifying the Code
-1. Always maintain TypeScript type safety
-2. Keep components pure and reusable
-3. Follow existing naming conventions
-4. Maintain mobile-first responsive design
-5. Test all user flows (signup → login → create post → join → view participants)
+
 
 ### Important Files to Review Before Changes
-- `/types/index.ts` - Data structures
-- `/data/mockData.ts` - Sample data structure
-- `/App.tsx` - State management and data flow
-- `/styles/globals.css` - Design tokens
+
 
 ## License and Contribution
 
