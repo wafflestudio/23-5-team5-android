@@ -1,0 +1,234 @@
+package com.example.toyproject5.ui.screens
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CreatePostScreen(onBack: () -> Unit) {
+    var selectedCategory by remember { mutableStateOf("스터디") }
+    var title by remember { mutableStateOf("") }
+    var field by remember { mutableStateOf("") }
+    var date by remember { mutableStateOf("") }
+    var location by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+
+    val categories = listOf("스터디", "고시", "취준", "대외활동")
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("공고 작성", fontSize = 18.sp, fontWeight = FontWeight.Bold) },
+                actions = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.Close, contentDescription = "Close")
+                    }
+                }
+            )
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp)
+        ) {
+            // Category Selection
+            Text(
+                text = buildString {
+                    append("카테고리")
+                },
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium
+            )
+            Text(text = "*", color = Color.Red, fontSize = 14.sp)
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    CategoryButton(
+                        text = "스터디",
+                        isSelected = selectedCategory == "스터디",
+                        onClick = { selectedCategory = "스터디" },
+                        modifier = Modifier.weight(1f)
+                    )
+                    CategoryButton(
+                        text = "고시",
+                        isSelected = selectedCategory == "고시",
+                        onClick = { selectedCategory = "고시" },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    CategoryButton(
+                        text = "취준",
+                        isSelected = selectedCategory == "취준",
+                        onClick = { selectedCategory = "취준" },
+                        modifier = Modifier.weight(1f)
+                    )
+                    CategoryButton(
+                        text = "대외활동",
+                        isSelected = selectedCategory == "대외활동",
+                        onClick = { selectedCategory = "대외활동" },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            InputField(
+                label = "제목",
+                value = title,
+                onValueChange = { title = it },
+                placeholder = "공고 제목을 입력하세요",
+                isRequired = true
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            InputField(
+                label = "분야",
+                value = field,
+                onValueChange = { field = it },
+                placeholder = "예: 영어, IT/개발"
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            InputField(
+                label = "일시",
+                value = date,
+                onValueChange = { date = it },
+                placeholder = "예: 매주 화, 목 오후 7시"
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            InputField(
+                label = "장소",
+                value = location,
+                onValueChange = { location = it },
+                placeholder = "예: 중앙도서관 3층"
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "소개글",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(
+                value = description,
+                onValueChange = { description = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(140.dp),
+                placeholder = { Text("상세한 설명을 입력하세요", color = Color.Gray) },
+                shape = RoundedCornerShape(10.dp),
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    unfocusedBorderColor = Color(0xFFD1D5DC),
+                    focusedBorderColor = Color(0xFF155DFC)
+                )
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = onBack,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE5E7EB))
+                ) {
+                    Text("취소", color = Color(0xFF364153), fontWeight = FontWeight.Bold)
+                }
+                Button(
+                    onClick = { /* 등록 로직 */ },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF155DFC))
+                ) {
+                    Text("등록", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(32.dp))
+        }
+    }
+}
+
+@Composable
+fun CategoryButton(text: String, isSelected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Button(
+        onClick = onClick,
+        modifier = modifier.height(42.dp),
+        shape = RoundedCornerShape(10.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (isSelected) Color(0xFF155DFC) else Color.White
+        ),
+        border = if (!isSelected) androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFD1D5DC)) else null
+    ) {
+        Text(
+            text = text,
+            color = if (isSelected) Color.White else Color(0xFF364153),
+            fontSize = 16.sp
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun InputField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    isRequired: Boolean = false
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row {
+            Text(text = label, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+            if (isRequired) {
+                Text(text = " *", color = Color.Red, fontSize = 14.sp)
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text(placeholder, color = Color.Gray) },
+            shape = RoundedCornerShape(10.dp),
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                unfocusedBorderColor = Color(0xFFD1D5DC),
+                focusedBorderColor = Color(0xFF155DFC)
+            ),
+            singleLine = true
+        )
+    }
+}

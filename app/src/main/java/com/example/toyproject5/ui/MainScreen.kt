@@ -10,32 +10,79 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.toyproject5.ui.screens.MyPageScreen
-import com.example.toyproject5.ui.screens.MyPostScreen
-import com.example.toyproject5.ui.screens.RecruitmentScreen
+import androidx.navigation.navArgument
+import com.example.toyproject5.ui.screens.*
 
 @Composable
 fun MainScreen() {
-    // 화면 이동을 담당하는 '네비게이션 컨트롤러'
     val navController = rememberNavController()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
+    // 상세 페이지 및 작성 페이지에서는 바텀바를 숨깁니다.
+    val showBottomBar = currentRoute in listOf(
+        NavRoute.Recruitment.route,
+        NavRoute.MyPost.route,
+        NavRoute.MyPage.route
+    )
 
     Scaffold(
         bottomBar = {
-            BottomBar(navController = navController)
+            if (showBottomBar) {
+                BottomBar(navController = navController)
+            }
         }
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = NavRoute.Recruitment.route, // 처음 보여줄 화면
+            startDestination = NavRoute.Recruitment.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(NavRoute.Recruitment.route) { RecruitmentScreen() }
-            composable(NavRoute.MyPost.route) { MyPostScreen() }
-            composable(NavRoute.MyPage.route) { MyPageScreen() }
+            composable(NavRoute.Recruitment.route) {
+                RecruitmentScreen(
+                    onPostClick = { postId ->
+                        navController.navigate(NavRoute.PostDetail.createRoute(postId))
+                    },
+                    onCreatePostClick = {
+                        navController.navigate(NavRoute.CreatePost.route)
+                    }
+                )
+            }
+            composable(NavRoute.MyPost.route) {
+                MyPostScreen(
+                    onPostClick = { postId ->
+                        navController.navigate(NavRoute.PostDetail.createRoute(postId))
+                    },
+                    onParticipantsClick = { postId ->
+                        navController.navigate(NavRoute.Participants.createRoute(postId))
+                    }
+                )
+            }
+            composable(NavRoute.MyPage.route) {
+                MyPageScreen()
+            }
+            composable(
+                route = NavRoute.PostDetail.route,
+                arguments = listOf(navArgument("postId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val postId = backStackEntry.arguments?.getString("postId") ?: return@composable
+                PostDetailScreen(postId = postId, onBack = { navController.popBackStack() })
+            }
+            composable(NavRoute.CreatePost.route) {
+                CreatePostScreen(onBack = { navController.popBackStack() })
+            }
+            composable(
+                route = NavRoute.Participants.route,
+                arguments = listOf(navArgument("postId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val postId = backStackEntry.arguments?.getString("postId") ?: return@composable
+                ParticipantsScreen(postId = postId, onBack = { navController.popBackStack() })
+            }
         }
     }
 }
@@ -45,13 +92,14 @@ fun BottomBar(navController: NavHostController) {
     val items = listOf(NavRoute.Recruitment, NavRoute.MyPost, NavRoute.MyPage)
 
     NavigationBar {
-        // 현재 내가 어떤 화면에 있는지 확인합니다.
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry?.destination?.route
 
         items.forEach { item ->
             NavigationBarItem(
-                icon = { Icon(imageVector = item.icon, contentDescription = item.title) },
+                icon = { 
+                    item.icon?.let { Icon(imageVector = it, contentDescription = item.title) }
+                },
                 label = { Text(text = item.title) },
                 selected = currentRoute == item.route,
                 onClick = {
