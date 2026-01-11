@@ -73,4 +73,8 @@ dependencies {
     kapt("com.google.dagger:hilt-android-compiler:2.56.2")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0") // Compose 연동용
 
+
+    // pingpong API용
+    implementation("com.squareup.retrofit2:converter-scalars:2.9.0")
+
 }

@@ -9,8 +9,8 @@ class PingRepository @Inject constructor(
 ) {
     suspend fun getPing(): Result<PingResponse> {
         return try {
-            val response = apiService.getPing()
-            Result.success(response)
+            val rawMessage = apiService.getPing()
+            Result.success(PingResponse(rawMessage))
         } catch (e: Exception) {
             Result.failure(e) // 네트워크 오류 등 예외 처리
         }
