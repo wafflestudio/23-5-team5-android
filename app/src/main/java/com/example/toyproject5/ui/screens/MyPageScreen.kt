@@ -24,16 +24,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.toyproject5.viewmodel.MyPageViewModel
 import com.example.toyproject5.viewmodel.PingViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MyPageScreen(viewModel: PingViewModel = hiltViewModel()) {
+fun MyPageScreen(pingViewModel: PingViewModel = hiltViewModel(),
+                 myPageViewModel: MyPageViewModel = hiltViewModel()) {
     var showNicknameDialog by remember { mutableStateOf(false) }
     var showProfilePicDialog by remember { mutableStateOf(false) }
-    var nickname by remember { mutableStateOf("냐냐") }
-    val email = "ss@university.ac.kr"
-    val pingMessage by viewModel.pingState.collectAsState()
+    val uiState by myPageViewModel.uiState.collectAsState()
+    val pingMessage by pingViewModel.pingState.collectAsState()
 
     Scaffold(
         topBar = { MyPageHeader() }
@@ -47,8 +48,8 @@ fun MyPageScreen(viewModel: PingViewModel = hiltViewModel()) {
         ) {
             // 프로필 섹션 (이미지, 닉네임, 이메일)
             ProfileSection(
-                nickname = nickname,
-                email = email,
+                nickname = uiState.nickname,
+                email = uiState.email,
                 onEditProfilePicClick = { showProfilePicDialog = true }
             )
 
@@ -56,8 +57,8 @@ fun MyPageScreen(viewModel: PingViewModel = hiltViewModel()) {
 
             // 사용자 정보 리스트 (닉네임, 이메일 카드)
             UserInfoList(
-                nickname = nickname,
-                email = email,
+                nickname = uiState.nickname,
+                email = uiState.email,
                 onNicknameEditClick = { showNicknameDialog = true }
             )
 
@@ -74,7 +75,7 @@ fun MyPageScreen(viewModel: PingViewModel = hiltViewModel()) {
             // 서버 통신 테스트 섹션
             PingPongTestSection(
                 pingMessage = pingMessage,
-                onPingClick = { viewModel.fetchPing() }
+                onPingClick = { pingViewModel.fetchPing() }
             )
         }
     }
@@ -82,10 +83,10 @@ fun MyPageScreen(viewModel: PingViewModel = hiltViewModel()) {
     // 3. 다이얼로그
     if (showNicknameDialog) {
         NicknameEditDialog(
-            currentNickname = nickname,
+            currentNickname = uiState.nickname,
             onDismiss = { showNicknameDialog = false },
             onConfirm = { newName ->
-                nickname = newName
+                myPageViewModel.updateNickname(newName)
                 showNicknameDialog = false
             }
         )
