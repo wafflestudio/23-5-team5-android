@@ -9,6 +9,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.ui.text.input.VisualTransformation
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -114,20 +120,47 @@ fun SignupStepIndicator(currentStep: Int) {
 
 @Composable
 fun EmailInputStep(email: String, onEmailChange: (String) -> Unit, onNext: () -> Unit) {
+    // 이메일이 @snu.ac.kr로 끝나는지 확인하는 로직
+    val isSnuEmail = email.endsWith("@snu.ac.kr") && email.length > 10 // @snu.ac.kr (10자) 보다 길어야 함
+
     Column(modifier = Modifier.fillMaxWidth()) {
         Text("이메일을 입력하세요", style = MaterialTheme.typography.headlineSmall)
+        Text(
+            text = "학교 이메일(@snu.ac.kr)로 인증이 필요합니다.",
+            style = MaterialTheme.typography.bodySmall,
+            color = Color.Gray,
+            modifier = Modifier.padding(top = 4.dp)
+        )
+
         Spacer(modifier = Modifier.height(16.dp))
+
         OutlinedTextField(
             value = email,
             onValueChange = onEmailChange,
             label = { Text("이메일") },
-            modifier = Modifier.fillMaxWidth()
+            placeholder = { Text("example@snu.ac.kr") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            isError = email.isNotEmpty() && !isSnuEmail // 입력 중인데 형식이 다르면 에러 표시
         )
+
+        // 에러 메시지 (선택 사항)
+        if (email.isNotEmpty() && !isSnuEmail) {
+            Text(
+                text = "@snu.ac.kr 도메인만 사용 가능합니다.",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(start = 4.dp, top = 4.dp)
+            )
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
+
         Button(
             onClick = onNext,
             modifier = Modifier.fillMaxWidth(),
-            enabled = email.isNotEmpty()
+            // 조건을 isSnuEmail로 변경
+            enabled = isSnuEmail
         ) {
             Text("인증코드 발송")
         }
@@ -141,8 +174,8 @@ fun VerificationStep(
     onAuthCodeChange: (String) -> Unit,
     onNext: () -> Unit
 ) {
-    // 에러 상태 관리 (실제로는 ViewModel에서 검증 결과를 받아와서 처리)
-    val isErrorCode = authCode.isNotEmpty() && authCode != "123456" // 예시 로직
+    // 1. 에러 표시 여부를 결정하는 상태 추가
+    var showError by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Text("이메일 인증", style = MaterialTheme.typography.headlineSmall)
@@ -156,16 +189,19 @@ fun VerificationStep(
 
         OutlinedTextField(
             value = authCode,
-            onValueChange = onAuthCodeChange,
+            onValueChange = {
+                onAuthCodeChange(it)
+            },
             label = { Text("인증코드") },
             placeholder = { Text("6자리 인증코드") },
             modifier = Modifier.fillMaxWidth(),
-            isError = isErrorCode,
+            // 3. showError 상태에 따라 테두리 색상 변경
+            isError = showError,
             singleLine = true
         )
 
-        // 빨간색 에러 메시지
-        if (isErrorCode) {
+        // 4. showError가 true일 때만 에러 메시지 표시
+        if (showError) {
             Text(
                 text = "인증코드가 일치하지 않습니다",
                 color = MaterialTheme.colorScheme.error,
@@ -177,9 +213,18 @@ fun VerificationStep(
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
-            onClick = onNext,
+            onClick = {
+                // 5. 버튼 클릭 시점에 정답 확인
+                if (authCode == "123456") {
+                    showError = false
+                    onNext() // 정답이면 다음 단계로
+                } else {
+                    showError = true // 틀리면 에러 메시지 표시
+                }
+            },
             modifier = Modifier.fillMaxWidth(),
-            enabled = authCode.length == 6 && !isErrorCode // 6자리이고 에러가 없을 때만 활성화
+            // 버튼은 6자리가 입력되었을 때만 활성화 (형식 검사)
+            enabled = authCode.length == 6
         ) {
             Text("인증하기")
         }
@@ -203,7 +248,11 @@ fun InfoInputStep(
     onConfirmChange: (String) -> Unit,
     onComplete: () -> Unit
 ) {
-    // 유효성 검사 로직
+    var isPasswordVisible by remember { mutableStateOf(false) }
+    var isConfirmVisible by remember { mutableStateOf(false) }
+
+    // 1. 세부 유효성 검사 로직 정의
+    val isPasswordTooShort = password.isNotEmpty() && password.length < 8
     val isPasswordMismatch = password.isNotEmpty() &&
             passwordConfirm.isNotEmpty() &&
             password != passwordConfirm
@@ -211,9 +260,13 @@ fun InfoInputStep(
             password.isNotEmpty() &&
             passwordConfirm.isNotEmpty()
 
+    // 2. 버튼 활성화 조건: 모든 필드 채움 + 8자 이상 + 비밀번호 일치
+    val isButtonEnabled = isAllFieldsFilled &&
+            password.length >= 8 &&
+            !isPasswordMismatch
+
     Column(modifier = Modifier.fillMaxWidth()) {
         Text("계정 정보를 입력하세요", style = MaterialTheme.typography.headlineSmall)
-
         Spacer(modifier = Modifier.height(16.dp))
 
         // 닉네임 입력
@@ -233,7 +286,17 @@ fun InfoInputStep(
             onValueChange = onPasswordChange,
             label = { Text("비밀번호 (8자 이상)") },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            singleLine = true,
+            // 8자 미만일 때 에러 색상 표시
+            isError = isPasswordTooShort,
+            visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            trailingIcon = {
+                val image = if (isPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
+                    Icon(imageVector = image, contentDescription = null)
+                }
+            }
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -244,34 +307,52 @@ fun InfoInputStep(
             onValueChange = onConfirmChange,
             label = { Text("비밀번호 확인") },
             modifier = Modifier.fillMaxWidth(),
+            // 일치하지 않을 때 에러 색상 표시
             isError = isPasswordMismatch,
-            singleLine = true
+            singleLine = true,
+            visualTransformation = if (isConfirmVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            trailingIcon = {
+                val image = if (isConfirmVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                IconButton(onClick = { isConfirmVisible = !isConfirmVisible }) {
+                    Icon(imageVector = image, contentDescription = null)
+                }
+            }
         )
 
-        // 에러 메시지 처리 (이미지처럼 아래쪽에 표시)
-        if (isPasswordMismatch) {
-            Text(
-                text = "비밀번호가 일치하지 않습니다",
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(start = 4.dp, top = 4.dp)
-            )
-        } else if (!isAllFieldsFilled && (nickname.isNotEmpty() || password.isNotEmpty())) {
-            // 모든 필드가 채워지지 않았을 때의 안내 (이미지 참고)
-            Text(
-                text = "모든 필드를 입력해주세요",
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(start = 4.dp, top = 4.dp)
-            )
+        // 3. 에러 메시지 우선순위 노출
+        Column(modifier = Modifier.height(24.dp)) { // 메시지 영역 높이 고정 (UI 울렁임 방지)
+            if (isPasswordTooShort) {
+                Text(
+                    text = "비밀번호는 8자리 이상 입력해주세요",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(start = 4.dp, top = 4.dp)
+                )
+            } else if (isPasswordMismatch) {
+                Text(
+                    text = "비밀번호가 일치하지 않습니다",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(start = 4.dp, top = 4.dp)
+                )
+            } else if (!isAllFieldsFilled && (nickname.isNotEmpty() || password.isNotEmpty())) {
+                Text(
+                    text = "모든 필드를 입력해주세요",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(start = 4.dp, top = 4.dp)
+                )
+            }
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         Button(
             onClick = onComplete,
             modifier = Modifier.fillMaxWidth(),
-            enabled = isAllFieldsFilled && !isPasswordMismatch
+            // 8자 이상 및 일치 조건이 모두 맞아야 활성화
+            enabled = isButtonEnabled
         ) {
             Text("가입 완료")
         }

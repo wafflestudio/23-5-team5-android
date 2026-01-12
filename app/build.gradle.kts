@@ -77,4 +77,7 @@ dependencies {
     // pingpong API용
     implementation("com.squareup.retrofit2:converter-scalars:2.9.0")
 
+    // Material Icons 확장 라이브러리
+    implementation("androidx.compose.material:material-icons-extended")
+
 }

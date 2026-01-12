@@ -17,6 +17,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.automirrored.filled.Login
 
 @Composable
 fun LoginScreen(
@@ -26,7 +28,7 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
-    // 이미지의 어두운 배경색 느낌을 위해 검정색 계열 배경 설정 (원치 않으시면 제거 가능)
+    // 이미지의 어두운 배경색 느낌을 위해 검정색 계열 배경 설정
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -37,16 +39,19 @@ fun LoginScreen(
         // 1. 로고 아이콘 (파란색 원형 아이콘)
         Surface(
             modifier = Modifier.size(60.dp),
-            shape = RoundedCornerShape(12.dp),
-            color = Color(0xFF2563EB) // 이미지의 선명한 파란색
+            shape = CircleShape,
+            color = Color(0xFF2563EB)
         ) {
             Icon(
-                imageVector = Icons.Default.Lock, // 적절한 로고 아이콘으로 교체 가능
-                contentDescription = null,
+                // Login 아이콘 사용
+                imageVector = Icons.AutoMirrored.Filled.Login,
+                contentDescription = "App Logo",
                 tint = Color.White,
-                modifier = Modifier.padding(15.dp)
+                modifier = Modifier.padding(15.dp) // 내부 아이콘 크기를 맞추기 위해 패딩
             )
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -69,7 +74,7 @@ fun LoginScreen(
             value = email,
             onValueChange = { email = it },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("이메일") },
+            placeholder = { Text("example@snu.ac.kr") },
             leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
             singleLine = true,
             shape = RoundedCornerShape(12.dp)
@@ -82,7 +87,7 @@ fun LoginScreen(
             value = password,
             onValueChange = { password = it },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("비밀번호") },
+            placeholder = { Text("비밀번호를 입력하세요") },
             leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
             visualTransformation = PasswordVisualTransformation(), // 비밀번호 숨기기
             singleLine = true,
