@@ -1,24 +1,39 @@
 package com.example.toyproject5.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.toyproject5.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import jakarta.inject.Inject
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 @HiltViewModel
-class MyPageViewModel @Inject constructor() : ViewModel() {
+class MyPageViewModel @Inject constructor(
+    private val userRepository: UserRepository
+) : ViewModel() {
 
-    // 1. 화면의 전체 상태를 담는 그릇 (Private)
-    private val _uiState = MutableStateFlow(MyPageState())
+    val uiState: StateFlow<MyPageState> = userRepository.nickname
+        .map { nickname ->
+            MyPageState(nickname = nickname)
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000), // 5초간 구독자가 없으면 멈춤(자원 절약)
+            initialValue = MyPageState() // 초기값
+        )
 
-    // 2. UI에서 관찰할 수 있는 공개용 통로 (Public)
-    val uiState: StateFlow<MyPageState> = _uiState.asStateFlow()
-
+    // 닉네임 변경
     fun updateNickname(newName: String) {
-        _uiState.update { it.copy(nickname = newName) }
+        viewModelScope.launch {
+            userRepository.updateNickname(newName)
+        }
     }
 }
 
