@@ -1,2 +1,2 @@
-package com.example.toyproject5.ui.screens.auth
+package com.example.toyproject5.viewmodel
 
