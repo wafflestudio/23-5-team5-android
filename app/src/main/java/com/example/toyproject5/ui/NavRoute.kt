@@ -7,6 +7,15 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.ui.graphics.vector.ImageVector
 
 sealed class NavRoute(val route: String, val title: String, val icon: ImageVector) {
+    // Auth Routes
+    object Login : NavRoute("login", "로그인", Icons.Default.Home)
+
+    object Signup : NavRoute("signup", "회원가입", Icons.Default.List)
+
+    // Main Route (MainScreen)
+    object Main : NavRoute("main", "메인", Icons.Default.Home)
+
+    // Bottom Bar Tabs (MainScreen 내부에서 사용)
     object Recruitment : NavRoute("recruitment", "모집공고", Icons.Default.Home)
     object MyPost : NavRoute("mypost", "내 공고", Icons.Default.List)
     object MyPage : NavRoute("mypage", "마이페이지", Icons.Default.Person)
