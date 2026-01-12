@@ -54,6 +54,7 @@ dependencies {
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.ui)
+    implementation(libs.androidx.datastore.core)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -77,6 +78,8 @@ dependencies {
     // pingpong API용
     implementation("com.squareup.retrofit2:converter-scalars:2.9.0")
 
+    // datastore
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
     // Material Icons 확장 라이브러리
     implementation("androidx.compose.material:material-icons-extended")
 
