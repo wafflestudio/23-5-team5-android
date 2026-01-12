@@ -14,7 +14,9 @@ import com.example.toyproject5.ui.MainScreen
 import com.example.toyproject5.ui.NavRoute
 import com.example.toyproject5.ui.screens.auth.LoginScreen
 import com.example.toyproject5.ui.screens.auth.SignupScreen
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
