@@ -111,6 +111,8 @@ fun LoginScreen(
             }
         )
 
+        Spacer(modifier = Modifier.height(24.dp))
+
         // 5. 로그인 버튼
         Button(
             onClick = onLoginSuccess,
