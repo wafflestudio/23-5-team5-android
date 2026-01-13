@@ -80,5 +80,7 @@ dependencies {
 
     // datastore
     implementation("androidx.datastore:datastore-preferences:1.1.1")
+    // Material Icons 확장 라이브러리
+    implementation("androidx.compose.material:material-icons-extended")
 
 }
