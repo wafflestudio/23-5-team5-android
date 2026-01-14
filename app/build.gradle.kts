@@ -80,7 +80,10 @@ dependencies {
 
     // datastore
     implementation("androidx.datastore:datastore-preferences:1.1.1")
+
     // Material Icons 확장 라이브러리
     implementation("androidx.compose.material:material-icons-extended")
 
+    // 프로필 이미지 보여주기
+    implementation("io.coil-kt:coil-compose:2.5.0")
 }
