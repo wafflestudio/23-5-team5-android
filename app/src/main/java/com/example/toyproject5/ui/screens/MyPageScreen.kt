@@ -1,5 +1,8 @@
 package com.example.toyproject5.ui.screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,11 +22,14 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
 import com.example.toyproject5.viewmodel.MyPageViewModel
 import com.example.toyproject5.viewmodel.PingViewModel
 
@@ -36,6 +42,17 @@ fun MyPageScreen(pingViewModel: PingViewModel = hiltViewModel(),
     val uiState by myPageViewModel.uiState.collectAsState()
     val pingMessage by pingViewModel.pingState.collectAsState()
 
+    // 파일 처리
+    val context = LocalContext.current
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        // [결과 처리] 사용자가 사진을 고르면 이곳으로 사진 주소(uri)가 들어옵니다.
+        uri?.let {
+            myPageViewModel.uploadProfileImage(it)
+        }
+    }
+
     Scaffold(
         topBar = { MyPageHeader() }
     ) { innerPadding ->
@@ -46,10 +63,11 @@ fun MyPageScreen(pingViewModel: PingViewModel = hiltViewModel(),
                 .background(Color.White)
                 .verticalScroll(rememberScrollState())
         ) {
-            // 프로필 섹션 (이미지, 닉네임, 이메일)
+            // 프로필 섹션 (이미지, 닉네임, 프로필이미지, 이메일)
             ProfileSection(
                 nickname = uiState.nickname,
                 email = uiState.email,
+                profileImageUrl = uiState.profileImageUrl,
                 onEditProfilePicClick = { showProfilePicDialog = true }
             )
 
@@ -93,7 +111,12 @@ fun MyPageScreen(pingViewModel: PingViewModel = hiltViewModel(),
     }
 
     if (showProfilePicDialog) {
-        ProfilePicDialog(onDismiss = { showProfilePicDialog = false })
+        ProfilePicDialog(onDismiss = { showProfilePicDialog = false },
+            onPickImage = {
+                photoPickerLauncher.launch("image/*") // 이미지 파일만 보여달라고 요청
+                showProfilePicDialog = false // 사진 고르러 가니까 다이얼로그는 닫음
+            }
+        )
     }
 }
 
@@ -118,6 +141,7 @@ fun MyPageHeader() {
 fun ProfileSection(
     nickname: String,
     email: String,
+    profileImageUrl: String?,
     onEditProfilePicClick: () -> Unit
 ) {
     Box(
@@ -141,12 +165,23 @@ fun ProfileSection(
                     color = Color.LightGray,
                     border = BorderStroke(4.dp, Color.White)
                 ) {
-                    Icon(
-                        Icons.Default.Person,
-                        contentDescription = null,
-                        modifier = Modifier.padding(20.dp),
-                        tint = Color.White
-                    )
+                    if (profileImageUrl != null) {
+                        // 주소가 있으면 진짜 이미지
+                        AsyncImage(
+                            model = profileImageUrl,
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        // 주소가 없으면 기본 아이콘
+                        Icon(
+                            Icons.Default.Person,
+                            contentDescription = null,
+                            modifier = Modifier.padding(20.dp),
+                            tint = Color.White
+                        )
+                    }
                 }
                 IconButton(
                     onClick = onEditProfilePicClick,
@@ -317,7 +352,8 @@ fun NicknameEditDialog(
 }
 
 @Composable
-fun ProfilePicDialog(onDismiss: () -> Unit) {
+fun ProfilePicDialog(onDismiss: () -> Unit,
+                     onPickImage: () -> Unit) {
     Dialog(onDismissRequest = onDismiss) {
         Surface(shape = RoundedCornerShape(10.dp), color = Color.White) {
             Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -328,10 +364,10 @@ fun ProfilePicDialog(onDismiss: () -> Unit) {
                         .fillMaxWidth()
                         .height(100.dp)
                         .background(Color(0xFFF9FAFB), RoundedCornerShape(10.dp))
-                        .clickable { /* 파일 탐색기 로직 */ },
+                        .clickable { onPickImage() },
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("이미지 업로드 (준비 중)", color = Color.Gray)
+                    Text("이미지 업로드", color = Color.Gray)
                 }
             }
         }
