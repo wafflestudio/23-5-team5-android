@@ -1,6 +1,7 @@
 package com.example.toyproject5.di
 
 import com.example.toyproject5.network.PingApiService
+import com.example.toyproject5.network.UserApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -11,6 +12,7 @@ import javax.inject.Singleton
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.converter.scalars.ScalarsConverterFactory
+import kotlin.jvm.java
 
 @Module
 @InstallIn(SingletonComponent::class) // 앱 전체에서 이 설정을 사용하겠다는 뜻
@@ -45,5 +47,11 @@ object NetworkModule {
     @Singleton
     fun providePingApiService(retrofit: Retrofit): PingApiService {
         return retrofit.create(PingApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserApiService(retrofit: Retrofit): UserApiService {
+        return retrofit.create(UserApiService::class.java)
     }
 }
