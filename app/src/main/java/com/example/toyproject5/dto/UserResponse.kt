@@ -2,7 +2,16 @@ package com.example.toyproject5.dto
 
 import com.google.gson.annotations.SerializedName
 
-// 추후 nickname, email을 불러오는 dto도 이 파일에 정의될 예쩡입니다.
+data class LoginRequest(
+    @SerializedName("username") val email: String, // backend로 보낼 때는 username
+    @SerializedName("password") val password: String
+)
+
+data class UserResponse(
+    @SerializedName("accessToken") val accessToken: String,
+    @SerializedName("nickname") val nickname: String,
+    @SerializedName("isVerified") val isVerified: Boolean
+)
 data class ImageResponse(
     @SerializedName("status") val status: String,
     @SerializedName("message") val message: String,

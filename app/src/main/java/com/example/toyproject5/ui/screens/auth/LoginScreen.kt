@@ -24,15 +24,27 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.toyproject5.viewmodel.LoginViewModel
 
 @Composable
 fun LoginScreen(
+    viewModel: LoginViewModel = hiltViewModel(),
     onLoginSuccess: () -> Unit,
     onSignupClick: () -> Unit
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    val email by viewModel.email.collectAsState()
+    val password by viewModel.password.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+
     var isPasswordVisible by remember { mutableStateOf(false) }
+
+    // 2. 비즈니스 로직에 따른 'Side Effect' 처리 (성공 시 화면 이동)
+    LaunchedEffect(uiState.isLoginSuccess) {
+        if (uiState.isLoginSuccess) {
+            onLoginSuccess()
+        }
+    }
 
     // 이미지의 어두운 배경색 느낌을 위해 검정색 계열 배경 설정
     Column(
@@ -78,7 +90,7 @@ fun LoginScreen(
         // 3. 이메일 입력창
         OutlinedTextField(
             value = email,
-            onValueChange = { email = it },
+            onValueChange = { viewModel.onEmailChanged(it) },
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("example@snu.ac.kr") },
             leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
@@ -91,7 +103,7 @@ fun LoginScreen(
         // 4. 비밀번호 입력창
         OutlinedTextField(
             value = password,
-            onValueChange = { password = it },
+            onValueChange = { viewModel.onPasswordChanged(it) },
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("비밀번호를 입력하세요") },
             leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
@@ -115,7 +127,8 @@ fun LoginScreen(
 
         // 5. 로그인 버튼
         Button(
-            onClick = onLoginSuccess,
+            onClick = { viewModel.login() },
+            enabled = !uiState.isLoading, // 로딩 중 클릭 방지
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),
