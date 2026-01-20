@@ -2,6 +2,8 @@ package com.example.toyproject5.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.toyproject5.dto.LoginRequest
+import com.example.toyproject5.repository.UserRepository
 import com.example.toyproject5.ui.screens.auth.LoginUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -13,7 +15,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 @HiltViewModel
-class LoginViewModel @Inject constructor() : ViewModel(){
+class LoginViewModel @Inject constructor(
+    private val userRepository: UserRepository
+) : ViewModel(){
     val email = MutableStateFlow("")
     val password = MutableStateFlow("")
 
@@ -33,23 +37,27 @@ class LoginViewModel @Inject constructor() : ViewModel(){
     // 로그인
     fun login() {
         viewModelScope.launch {
-            // 로딩 시작 상태로 업데이트
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-            try {
-                // TODO: userRepository.login()을 호출
-                // 2초간 통신하는 시뮬레이션을 수행합니다.
-                delay(2000)
+            // Repository에 보낼 요청 객체
+            val request = LoginRequest(
+                email = email.value,
+                password = password.value
+            )
 
-                // 로그인 성공 상태로 업데이트
-                _uiState.update { it.copy(isLoading = false, isLoginSuccess = true) }
-            } catch (e: Exception) {
-                // 실패 시 에러 메시지 업데이트
+            // Repository의 로그인 함수를 호출하고 결과 받기
+            val result = userRepository.login(request)
+            result.onSuccess { user ->
+                // 로그인 성공 시
                 _uiState.update {
-                    it.copy(isLoading = false, errorMessage = "이메일 또는 비밀번호를 확인해주세요.")
+                    it.copy(isLoading = false, isLoginSuccess = true)
+                }
+            }.onFailure { exception ->
+                // 로그인 실패 시
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = exception.message)
                 }
             }
         }
     }
-
 }

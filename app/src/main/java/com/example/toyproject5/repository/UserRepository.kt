@@ -3,12 +3,16 @@ package com.example.toyproject5.repository
 import androidx.datastore.dataStore
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.example.toyproject5.data.local.UserPreferences
+import com.example.toyproject5.dto.LoginRequest
+import com.example.toyproject5.dto.UserResponse
+import kotlinx.coroutines.delay
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import okhttp3.MultipartBody
 
 class UserRepository @Inject constructor(
-    private val userDataStore: UserPreferences //
+    private val userDataStore: UserPreferences
+    // private val authApiService: AuthApiService TODO: API 완성되면 진행
 ) {
     // 닉네임
     // 1. 읽기: DataStore에서 흘러나오는 닉네임 흐름을 그대로 노출
@@ -18,6 +22,31 @@ class UserRepository @Inject constructor(
     suspend fun updateNickname(newName: String) {
         // 나중에 여기에 서버 통신 코드(apiService.updateNickname)가 추가될 예정
         userDataStore.saveNickname(newName)
+    }
+
+    // 로그인
+    suspend fun login(loginRequest: LoginRequest): Result<UserResponse> {
+        // val response = authApiService.login(loginRequest) TODO 실제 서버 연결
+        return try {
+            // 1. 네트워크 통신을 하는 것처럼 1초 정도 기다려줍니다. (사용자 경험 테스트용)
+            delay(1000)
+
+            // 2. 서버가 줄 법한 가짜 응답 데이터를 직접 만듭니다.
+            val mockResponse = UserResponse(
+                accessToken = "this_is_fake_token_for_test",
+                nickname = "냐냐",
+                isVerified = true
+            )
+
+            // 3. 성공했다고 가정하고 DataStore에 저장합니다.
+            userDataStore.saveNickname(mockResponse.nickname)
+            userDataStore.saveToken(mockResponse.accessToken)
+
+            // 4. 항상 성공 결과를 반환합니다.
+            Result.success(mockResponse)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     // 이미지

@@ -17,6 +17,7 @@ class UserPreferences @Inject constructor(
     private companion object {
         val NICKNAME_KEY = stringPreferencesKey("user_nickname")
         val PROFILE_IMAGE_KEY = stringPreferencesKey("profile_image_uri")
+        val TOKEN_KEY = stringPreferencesKey("user_token")
     }
 
     // 로컬 저장소에서 실시간으로 닉네임을 읽어옴
@@ -52,4 +53,10 @@ class UserPreferences @Inject constructor(
         }
     }
 
+    // 토큰 저장용
+    suspend fun saveToken(token: String) {
+        dataStore.edit { preferences ->
+            preferences[TOKEN_KEY] = token
+        }
+    }
 }
