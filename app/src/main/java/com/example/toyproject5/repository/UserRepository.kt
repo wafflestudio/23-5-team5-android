@@ -18,8 +18,9 @@ class UserRepository @Inject constructor(
     // private val userApiService: UserApiService TODO: 프로필 사진 변경 기능
 ) {
     // 닉네임
-    // 1. 읽기: DataStore에서 흘러나오는 닉네임 흐름을 그대로 노출
+    // 1. 읽기: DataStore에서 흘러나오는 흐름을 그대로 노출
     val nickname: Flow<String> = userDataStore.nicknameFlow
+    val email: Flow<String> = userDataStore.emailFlow
 
     // 2. 쓰기: 사용자가 닉네임을 변경했을 때 호출
     suspend fun updateNickname(newName: String) {
@@ -44,6 +45,9 @@ class UserRepository @Inject constructor(
                     // 성공 시 토큰과 닉네임을 로컬 저장소(DataStore)에 저장
                     userDataStore.saveNickname(body.nickname)
                     userDataStore.saveToken(body.accessToken)
+
+                    // 이메일은 loginRequest에 있었음
+                    userDataStore.saveEmail(loginRequest.email)
 
                     // 성공 결과 반환
                     Result.success(body)
