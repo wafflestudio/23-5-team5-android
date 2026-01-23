@@ -1,5 +1,6 @@
 package com.example.toyproject5.di
 
+import com.example.toyproject5.network.AuthApiService
 import com.example.toyproject5.network.PingApiService
 import com.example.toyproject5.network.UserApiService
 import dagger.Module
@@ -33,10 +34,10 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideRetrofit(): Retrofit {
+    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
             .baseUrl("http://43.203.97.212:8080/") // ⚠️ 실제 서버 주소로 꼭 바꾸기!
-            .client(provideOkHttpClient())
+            .client(okHttpClient)
             // 만약 scalar (JSON 형이 아닌) 형태로 온다면, 이 부분을 추가
             .addConverterFactory(ScalarsConverterFactory.create())
             .addConverterFactory(GsonConverterFactory.create())
@@ -53,5 +54,11 @@ object NetworkModule {
     @Singleton
     fun provideUserApiService(retrofit: Retrofit): UserApiService {
         return retrofit.create(UserApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAuthApiService(retrofit: Retrofit): AuthApiService {
+        return retrofit.create(AuthApiService::class.java)
     }
 }
