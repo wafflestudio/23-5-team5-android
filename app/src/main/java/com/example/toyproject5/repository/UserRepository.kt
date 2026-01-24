@@ -5,18 +5,22 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import com.example.toyproject5.data.local.UserPreferences
 import com.example.toyproject5.dto.LoginRequest
 import com.example.toyproject5.dto.UserResponse
+import com.example.toyproject5.network.AuthApiService
+import com.example.toyproject5.network.UserApiService
 import kotlinx.coroutines.delay
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import okhttp3.MultipartBody
 
 class UserRepository @Inject constructor(
-    private val userDataStore: UserPreferences
-    // private val authApiService: AuthApiService TODO: API 완성되면 진행
+    private val userDataStore: UserPreferences,
+    private val authApiService: AuthApiService
+    // private val userApiService: UserApiService TODO: 프로필 사진 변경 기능
 ) {
     // 닉네임
-    // 1. 읽기: DataStore에서 흘러나오는 닉네임 흐름을 그대로 노출
+    // 1. 읽기: DataStore에서 흘러나오는 흐름을 그대로 노출
     val nickname: Flow<String> = userDataStore.nicknameFlow
+    val email: Flow<String> = userDataStore.emailFlow
 
     // 2. 쓰기: 사용자가 닉네임을 변경했을 때 호출
     suspend fun updateNickname(newName: String) {
@@ -24,26 +28,36 @@ class UserRepository @Inject constructor(
         userDataStore.saveNickname(newName)
     }
 
-    // 로그인
+    /**
+     * [로그인 함수]
+     * @param loginRequest: 이메일과 비밀번호가 담긴 객체
+     * @return Result<UserResponse>: 성공 또는 실패 결과를 캡슐화하여 반환
+     */
     suspend fun login(loginRequest: LoginRequest): Result<UserResponse> {
-        // val response = authApiService.login(loginRequest) TODO 실제 서버 연결
         return try {
-            // 1. 네트워크 통신을 하는 것처럼 1초 정도 기다려줍니다. (사용자 경험 테스트용)
-            delay(1000)
+            // 실제 서버 API 호출
+            val response = authApiService.login(loginRequest)
 
-            // 2. 서버가 줄 법한 가짜 응답 데이터를 직접 만듭니다.
-            val mockResponse = UserResponse(
-                accessToken = "this_is_fake_token_for_test",
-                nickname = "냐냐",
-                isVerified = true
-            )
+            // 서버 응답 결과 확인
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) {
+                    // 성공 시 토큰과 닉네임을 로컬 저장소(DataStore)에 저장
+                    userDataStore.saveNickname(body.nickname)
+                    userDataStore.saveToken(body.accessToken)
 
-            // 3. 성공했다고 가정하고 DataStore에 저장합니다.
-            userDataStore.saveNickname(mockResponse.nickname)
-            userDataStore.saveToken(mockResponse.accessToken)
+                    // 이메일은 loginRequest에 있었음
+                    userDataStore.saveEmail(loginRequest.email)
 
-            // 4. 항상 성공 결과를 반환합니다.
-            Result.success(mockResponse)
+                    // 성공 결과 반환
+                    Result.success(body)
+                } else {
+                    Result.failure(Exception("서버 응답 데이터가 없습니다."))
+                }
+            } else {
+                // 서버 에러 처리
+                Result.failure(Exception("로그인 실패 (에러 코드: ${response.code()})"))
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }

@@ -27,11 +27,13 @@ class MyPageViewModel @Inject constructor(
 
     val uiState: StateFlow<MyPageState> = combine(
         userRepository.nickname,
+        userRepository.email,
         userRepository.profileImageUri,
         _tempImageUri
-    ) { nickname, savedUri, tempUri ->
+    ) { nickname, email, savedUri, tempUri ->
         MyPageState(
             nickname = nickname,
+            email = email,
             // [규칙] 임시 사진(tempUri)이 있으면 그걸 쓰고, 없으면 저장된 사진(savedUri)을 쓴다!
             profileImageUrl = tempUri ?: savedUri
         )

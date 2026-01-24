@@ -18,6 +18,7 @@ class UserPreferences @Inject constructor(
         val NICKNAME_KEY = stringPreferencesKey("user_nickname")
         val PROFILE_IMAGE_KEY = stringPreferencesKey("profile_image_uri")
         val TOKEN_KEY = stringPreferencesKey("user_token")
+        val EMAIL_KEY = stringPreferencesKey("user_email")
     }
 
     // 로컬 저장소에서 실시간으로 닉네임을 읽어옴
@@ -27,6 +28,15 @@ class UserPreferences @Inject constructor(
         }
         .map { preferences ->
             preferences[NICKNAME_KEY] ?: "냐냐" // 기본값 설정
+        }
+
+    // 로컬 저장소에서 실시간으로 이메일을 읽어옴
+    val emailFlow: Flow<String> = dataStore.data
+        .catch { exception ->
+            if (exception is IOException) emit(emptyPreferences()) else throw exception
+        }
+        .map { preferences ->
+            preferences[EMAIL_KEY] ?: "ss.university.ac.kr" // 기본값 설정
         }
 
     // 로컬 저장소에서 실시간으로 프로필 이미지을 읽어옴
@@ -43,6 +53,13 @@ class UserPreferences @Inject constructor(
     suspend fun saveNickname(newNickname: String) {
         dataStore.edit { preferences ->
             preferences[NICKNAME_KEY] = newNickname
+        }
+    }
+
+    // 사용자가 입력한 이메일을 저장소에 기록. (현재 로직으로는 이메일이 수정될 일은 없음.)
+    suspend fun saveEmail(email: String) {
+        dataStore.edit { preferences ->
+            preferences[EMAIL_KEY] = email
         }
     }
 
