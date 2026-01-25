@@ -1,5 +1,7 @@
 package com.example.toyproject5.viewmodel
 
+import android.content.ContentResolver
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.toyproject5.repository.UserRepository
@@ -9,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -19,15 +22,48 @@ class MyPageViewModel @Inject constructor(
     private val userRepository: UserRepository
 ) : ViewModel() {
 
-    val uiState: StateFlow<MyPageState> = userRepository.nickname
-        .map { nickname ->
-            MyPageState(nickname = nickname)
-        }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000), // 5초간 구독자가 없으면 멈춤(자원 절약)
-            initialValue = MyPageState() // 초기값
+    // 1. [임시 저장소] 사용자가 사진을 고르자마자 '잠시' 담아둘 곳
+    private val _tempImageUri = MutableStateFlow<String?>(null)
+
+    val uiState: StateFlow<MyPageState> = combine(
+        userRepository.nickname,
+        userRepository.email,
+        userRepository.profileImageUri,
+        _tempImageUri
+    ) { nickname, email, savedUri, tempUri ->
+        MyPageState(
+            nickname = nickname,
+            email = email,
+            // [규칙] 임시 사진(tempUri)이 있으면 그걸 쓰고, 없으면 저장된 사진(savedUri)을 쓴다!
+            profileImageUrl = tempUri ?: savedUri
         )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = MyPageState()
+    )
+
+    // 이미지 업로드 (낙관적 업데이트)
+    fun uploadProfileImage(uri : Uri) {
+        // [선조치] 갤러리에서 사진을 받자마자 임시 저장소에 넣습니다.
+        // 이 순간 uiState가 변하면서 화면의 프로필 사진이 즉시 바뀝니다!
+        _tempImageUri.value = uri.toString()
+
+        // [후보고] 실제 저장 작업은 백그라운드에서 조용히 진행합니다.
+        viewModelScope.launch {
+            try {
+                userRepository.saveProfileImage(uri.toString())
+
+                // 성공 시 처리 로직 (예: 프로필 이미지 URL 업데이트 등)
+                println("업로드 시도할 URI: $uri")
+                _tempImageUri.value = null
+            } catch (e: Exception) {
+                // [실패 시] 저장이 실패하면 임시 값을 지워 원래 사진으로 되돌립니다.
+                _tempImageUri.value = null
+                e.printStackTrace()
+            }
+        }
+    }
 
     // 닉네임 변경
     fun updateNickname(newName: String) {
@@ -40,5 +76,6 @@ class MyPageViewModel @Inject constructor(
 // MyPageState 클래스
 data class MyPageState(
     val nickname: String = "냐냐",
-    val email: String = "ss@university.ac.kr"
+    val email: String = "ss@university.ac.kr",
+    val profileImageUrl: String? = null,
 )
