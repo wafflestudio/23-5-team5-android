@@ -6,13 +6,12 @@ import com.example.toyproject5.dto.LoginRequest
 import com.example.toyproject5.repository.UserRepository
 import com.example.toyproject5.ui.screens.auth.LoginUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
@@ -57,6 +56,22 @@ class LoginViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(isLoading = false, errorMessage = exception.message)
                 }
+            }
+        }
+    }
+
+    //
+    fun loginWithGoogle(idToken: String, email: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+
+            // UserRepository에 구글 로그인 처리 함수가 구현되어 있어야 합니다.
+            val result = userRepository.googleLogin(idToken, email)
+
+            result.onSuccess {
+                _uiState.update { it.copy(isLoading = false, isLoginSuccess = true) }
+            }.onFailure { exception ->
+                _uiState.update { it.copy(isLoading = false, errorMessage = exception.message) }
             }
         }
     }

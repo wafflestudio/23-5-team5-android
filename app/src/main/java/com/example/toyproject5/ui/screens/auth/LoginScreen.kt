@@ -26,6 +26,19 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.toyproject5.viewmodel.LoginViewModel
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.toyproject5.R
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
 
 @Composable
 fun LoginScreen(
@@ -36,10 +49,41 @@ fun LoginScreen(
     val email by viewModel.email.collectAsState()
     val password by viewModel.password.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+    val clientId = stringResource(R.string.default_web_client_id)
 
     var isPasswordVisible by remember { mutableStateOf(false) }
 
-    // 2. 비즈니스 로직에 따른 'Side Effect' 처리 (성공 시 화면 이동)
+
+    // 1. 구글 로그인 설정 (GSO)
+    val googleSignInClient = remember {
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(clientId)
+            .requestEmail()
+            .build()
+        GoogleSignIn.getClient(context, gso)
+    }
+
+    // 2. 로그인 결과를 처리할 런처
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        try {
+            val account = task.getResult(ApiException::class.java)
+            // idToken과 email을 모두 추출합니다.
+            val idToken = account?.idToken
+            val email = account?.email // 구글 계정 이메일 가져오기
+
+            if (idToken != null && email != null) {
+                viewModel.loginWithGoogle(idToken, email)
+            }
+        } catch (e: ApiException) {
+            // 에러 처리 로직
+        }
+    }
+
+    // 비즈니스 로직에 따른 'Side Effect' 처리 (성공 시 화면 이동)
     LaunchedEffect(uiState.isLoginSuccess) {
         if (uiState.isLoginSuccess) {
             onLoginSuccess()
@@ -138,7 +182,20 @@ fun LoginScreen(
             Text(text = "로그인", fontSize = 16.sp, fontWeight = FontWeight.Bold)
         }
 
+        Spacer(modifier = Modifier.height(12.dp))
+
+        OutlinedButton(
+            onClick = { launcher.launch(googleSignInClient.signInIntent) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Text("구글로 로그인하기", fontSize = 16.sp)
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
+
 
         // 6. 회원가입 유도 텍스트
         Row(

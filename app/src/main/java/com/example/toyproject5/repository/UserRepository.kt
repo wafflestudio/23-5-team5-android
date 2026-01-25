@@ -3,6 +3,7 @@ package com.example.toyproject5.repository
 import androidx.datastore.dataStore
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.example.toyproject5.data.local.UserPreferences
+import com.example.toyproject5.dto.GoogleLoginRequest
 import com.example.toyproject5.dto.LoginRequest
 import com.example.toyproject5.dto.UserResponse
 import com.example.toyproject5.network.AuthApiService
@@ -57,6 +58,35 @@ class UserRepository @Inject constructor(
             } else {
                 // 서버 에러 처리
                 Result.failure(Exception("로그인 실패 (에러 코드: ${response.code()})"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * [구글 로그인 함수]
+     * @param idToken: 구글에서 발급받은 ID 토큰
+     * @param email: 구글 계정에서 가져온 사용자의 이메일
+     * @return Result<UserResponse>: 성공 또는 실패 결과를 캡슐화하여 반환
+     */
+    suspend fun googleLogin(idToken: String, email: String): Result<UserResponse> {
+        return try {
+            // 1. 서버에 idToken을 보내서 검증 및 로그인 처리
+            val response = authApiService.googleLogin(GoogleLoginRequest(idToken))
+
+            if (response.isSuccessful && response.body() != null) {
+                val body = response.body()!!
+                // 로그인 성공 시 토큰과 정보를 저장
+                userDataStore.saveNickname(body.nickname)
+                userDataStore.saveToken(body.accessToken)
+
+                // 3. 구글 계정에서 받아온 이메일을 DataStore에 저장
+                userDataStore.saveEmail(email)
+
+                Result.success(body)
+            } else {
+                Result.failure(Exception("구글 로그인 실패: ${response.code()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)
