@@ -1,13 +1,10 @@
 package com.example.toyproject5.repository
 
-import androidx.datastore.dataStore
-import androidx.datastore.preferences.core.stringPreferencesKey
 import com.example.toyproject5.data.local.UserPreferences
 import com.example.toyproject5.dto.LoginRequest
 import com.example.toyproject5.dto.UserResponse
 import com.example.toyproject5.network.AuthApiService
 import com.example.toyproject5.network.UserApiService
-import kotlinx.coroutines.delay
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import okhttp3.MultipartBody
@@ -84,7 +81,7 @@ class UserRepository @Inject constructor(
                 val response = userApiService.uploadProfileImage(it)
                 if (response.isSuccessful) {
                     // 서버 업로드 성공 시, 서버가 준 '진짜 인터넷 주소'로 금고를 갱신
-                    response.body()?.imageUrl?.let { serverUrl ->
+                    response.body()?.profileImageUrl?.let { serverUrl ->
                         userDataStore.saveProfileImage(serverUrl)
                     }
                 }
