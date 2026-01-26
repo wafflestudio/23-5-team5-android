@@ -2,7 +2,7 @@ name: Android CI
 
 on:
   push:
-    branches: [ "main", "dgddgd314" ] # main이나 dgddgd314에 코드가 올라갈 때
+    branches: [ "main", "dgddgd314", "feature/**" ] # main이나 dgddgd314에 코드가 올라갈 때
   pull_request:
     branches: [ "main" ] # PR(합치기 요청)이 생성될 때
 
