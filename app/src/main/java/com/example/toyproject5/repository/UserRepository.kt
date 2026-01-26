@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import com.example.toyproject5.data.local.UserPreferences
 import com.example.toyproject5.dto.GoogleLoginRequest
 import com.example.toyproject5.dto.LoginRequest
+import com.example.toyproject5.dto.OAuthLoginResponse
 import com.example.toyproject5.dto.UserResponse
 import com.example.toyproject5.network.AuthApiService
 import com.example.toyproject5.network.UserApiService
@@ -65,28 +66,32 @@ class UserRepository @Inject constructor(
     }
 
     /**
-     * [구글 로그인 함수]
-     * @param idToken: 구글에서 발급받은 ID 토큰
-     * @param email: 구글 계정에서 가져온 사용자의 이메일
-     * @return Result<UserResponse>: 성공 또는 실패 결과를 캡슐화하여 반환
+     * [구글 로그인/회원가입 처리]
+     * @param idToken: 구글에서 받은 id_token
+     * @param email: 로컬에 저장할 구글 이메일
      */
-    suspend fun googleLogin(idToken: String, email: String): Result<UserResponse> {
+    suspend fun handleGoogleAuth(idToken: String, email: String): Result<OAuthLoginResponse> {
         return try {
-            // 1. 서버에 idToken을 보내서 검증 및 로그인 처리
-            val response = authApiService.googleLogin(GoogleLoginRequest(idToken))
+            val response = authApiService.googleLogin(googleLoginRequest = GoogleLoginRequest(idToken))
 
             if (response.isSuccessful && response.body() != null) {
                 val body = response.body()!!
-                // 로그인 성공 시 토큰과 정보를 저장
-                userDataStore.saveNickname(body.nickname)
-                userDataStore.saveToken(body.accessToken)
 
-                // 3. 구글 계정에서 받아온 이메일을 DataStore에 저장
-                userDataStore.saveEmail(email)
-
-                Result.success(body)
+                if (body.type == "REGISTER") {
+                    // 케이스 A: 추가 회원가입이 필요한 상태
+                    // 이메일과 임시 토큰을 저장하고 회원가입 화면으로 보내야 합니다.
+                    userDataStore.saveEmail(email)
+                    userDataStore.saveToken(body.token) // 임시 토큰 저장
+                    Result.success(body)
+                } else {
+                    // 케이스 B: 이미 가입된 유저 (로그인 성공)
+                    userDataStore.saveEmail(email)
+                    userDataStore.saveToken(body.token) // 최종 토큰 저장
+                    // 필요하다면 닉네임 등 추가 정보 저장
+                    Result.success(body)
+                }
             } else {
-                Result.failure(Exception("구글 로그인 실패: ${response.code()}"))
+                Result.failure(Exception("인증 실패: ${response.code()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)

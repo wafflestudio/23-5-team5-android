@@ -65,8 +65,8 @@ class LoginViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-            // UserRepository에 구글 로그인 처리 함수가 구현되어 있어야 합니다.
-            val result = userRepository.googleLogin(idToken, email)
+            // UserRepository에 구글 로그인 처리 함수
+            val result = userRepository.handleGoogleAuth(idToken, email)
 
             result.onSuccess {
                 _uiState.update { it.copy(isLoading = false, isLoginSuccess = true) }

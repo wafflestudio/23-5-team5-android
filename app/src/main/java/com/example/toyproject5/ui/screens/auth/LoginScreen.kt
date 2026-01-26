@@ -1,6 +1,5 @@
 package com.example.toyproject5.ui.screens.auth
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,7 +13,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.shape.CircleShape
@@ -28,17 +26,22 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.toyproject5.viewmodel.LoginViewModel
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.toyproject5.R
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.material.ripple.rememberRipple
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 
 @Composable
 fun LoginScreen(
@@ -184,15 +187,11 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        OutlinedButton(
-            onClick = { launcher.launch(googleSignInClient.signInIntent) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Text("구글로 로그인하기", fontSize = 16.sp)
-        }
+        GoogleSignInImageButton(
+            onClick = {
+                launcher.launch(googleSignInClient.signInIntent)
+            }
+        )
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -211,5 +210,37 @@ fun LoginScreen(
                 modifier = Modifier.clickable { onSignupClick() }
             )
         }
+    }
+}
+
+@Composable
+fun GoogleSignInImageButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    // 클릭했을 때 물결(Ripple) 효과를 주기 위한 설정
+    val interactionSource = remember { MutableInteractionSource() }
+
+    Surface(
+        // 1. Surface를 써서 배경을 투명하게 만듭니다.
+        color = Color.Transparent,
+        modifier = modifier
+            // 2. 이미지 크기에 딱 맞게 감싸줍니다.
+            .wrapContentSize()
+            // 3. 여기가 핵심! 클릭 기능을 달아줍니다.
+            .clickable(
+                interactionSource = interactionSource,
+                indication = rememberRipple(bounded = true), // 물결 효과 추가
+                onClick = onClick
+            )
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.ic_google_signin),
+            contentDescription = "Google로 로그인",
+            // 이미지가 비율을 유지하면서 꽉 차게 설정
+            contentScale = ContentScale.Fit,
+            // 스크린샷에 나온 높이(40dp)로 설정하면 가장 예쁘게 나옵니다.
+            modifier = Modifier.height(40.dp)
+        )
     }
 }

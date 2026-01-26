@@ -8,7 +8,12 @@ data class LoginRequest(
 )
 
 data class GoogleLoginRequest(
-    @SerializedName("idToken") val idToken: String
+    val token: String
+)
+
+data class OAuthLoginResponse(
+    val type: String,  // "REGISTER" 또는 "LOGIN" (또는 "SUCCESS")
+    val token: String  // 임시 토큰 또는 최종 액세스 토큰
 )
 
 data class UserResponse(
