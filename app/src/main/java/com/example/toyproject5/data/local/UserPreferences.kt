@@ -49,6 +49,15 @@ class UserPreferences @Inject constructor(
             preferences[PROFILE_IMAGE_KEY]
         }
 
+    // 로컬 저장소에서 실시간으로 token값을 읽어옴
+    val tokenFlow: Flow<String?> = dataStore.data
+        .catch { exception ->
+            if (exception is IOException) emit(emptyPreferences()) else throw exception
+        }
+        .map { preferences ->
+            preferences[TOKEN_KEY] // 저장된 토큰이 없으면 null 반환
+        }
+
     // 사용자가 입력한 새로운 닉네임을 저장소에 기록함
     suspend fun saveNickname(newNickname: String) {
         dataStore.edit { preferences ->
