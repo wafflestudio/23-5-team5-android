@@ -11,11 +11,12 @@ import kotlinx.coroutines.delay
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import okhttp3.MultipartBody
+import kotlin.let
 
 class UserRepository @Inject constructor(
     private val userDataStore: UserPreferences,
-    private val authApiService: AuthApiService
-    // private val userApiService: UserApiService TODO: 프로필 사진 변경 기능
+    private val authApiService: AuthApiService,
+    private val userApiService: UserApiService
 ) {
     // 닉네임
     // 1. 읽기: DataStore에서 흘러나오는 흐름을 그대로 노출
@@ -78,7 +79,6 @@ class UserRepository @Inject constructor(
         userDataStore.saveProfileImage(uri)
 
         // [후보고 - 서버 전송 준비]
-        /*
         imagePart?.let {
             try {
                 val response = userApiService.uploadProfileImage(it)
@@ -93,6 +93,5 @@ class UserRepository @Inject constructor(
                 e.printStackTrace()
             }
         }
-        */
     }
 }
