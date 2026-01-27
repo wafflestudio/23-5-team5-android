@@ -8,12 +8,13 @@ data class LoginRequest(
 )
 
 data class UserResponse(
-    @SerializedName("accessToken") val accessToken: String,
+    @SerializedName("access_token") val accessToken: String,
     @SerializedName("nickname") val nickname: String,
-    @SerializedName("isVerified") val isVerified: Boolean
+    @SerializedName("is_verified") val isVerified: Boolean
 )
 data class ImageResponse(
-    @SerializedName("status") val status: String,
-    @SerializedName("message") val message: String,
-    @SerializedName("imageUrl") val imageUrl: String // todo:서버에 저장된 진짜 인터넷 주소
+    @SerializedName("user_id") val userId: Int,
+    @SerializedName("username") val username: String,
+    @SerializedName("nickname") val nickname: String,
+    @SerializedName("profile_image_url") val profileImageUrl: String?,
 )

@@ -1,21 +1,19 @@
 package com.example.toyproject5.repository
 
-import androidx.datastore.dataStore
-import androidx.datastore.preferences.core.stringPreferencesKey
 import com.example.toyproject5.data.local.UserPreferences
 import com.example.toyproject5.dto.LoginRequest
 import com.example.toyproject5.dto.UserResponse
 import com.example.toyproject5.network.AuthApiService
 import com.example.toyproject5.network.UserApiService
-import kotlinx.coroutines.delay
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import okhttp3.MultipartBody
+import kotlin.let
 
 class UserRepository @Inject constructor(
     private val userDataStore: UserPreferences,
-    private val authApiService: AuthApiService
-    // private val userApiService: UserApiService TODO: 프로필 사진 변경 기능
+    private val authApiService: AuthApiService,
+    private val userApiService: UserApiService
 ) {
     // 닉네임
     // 1. 읽기: DataStore에서 흘러나오는 흐름을 그대로 노출
@@ -78,13 +76,12 @@ class UserRepository @Inject constructor(
         userDataStore.saveProfileImage(uri)
 
         // [후보고 - 서버 전송 준비]
-        /*
         imagePart?.let {
             try {
                 val response = userApiService.uploadProfileImage(it)
                 if (response.isSuccessful) {
                     // 서버 업로드 성공 시, 서버가 준 '진짜 인터넷 주소'로 금고를 갱신
-                    response.body()?.imageUrl?.let { serverUrl ->
+                    response.body()?.profileImageUrl?.let { serverUrl ->
                         userDataStore.saveProfileImage(serverUrl)
                     }
                 }
@@ -93,6 +90,5 @@ class UserRepository @Inject constructor(
                 e.printStackTrace()
             }
         }
-        */
     }
 }
