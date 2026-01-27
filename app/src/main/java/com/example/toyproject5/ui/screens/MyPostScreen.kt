@@ -141,7 +141,7 @@ fun MyPostCard(
                         fontSize = 12.sp
                     )
                 }
-                Text(text = group.createdAt.take(10), color = Color(0xFF6A7282), fontSize = 12.sp)
+                Text(text = group.createdAt?.take(10) ?: "", color = Color(0xFF6A7282), fontSize = 12.sp)
             }
 
             Spacer(modifier = Modifier.height(8.dp))

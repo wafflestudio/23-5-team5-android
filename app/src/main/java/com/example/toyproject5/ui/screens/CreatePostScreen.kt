@@ -1,6 +1,5 @@
 package com.example.toyproject5.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -9,7 +8,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -25,10 +23,9 @@ fun CreatePostScreen(
     onBack: () -> Unit,
     viewModel: GroupViewModel = hiltViewModel()
 ) {
+    var groupName by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf("스터디") }
-    var title by remember { mutableStateOf("") }
-    var field by remember { mutableStateOf("") }
-    var date by remember { mutableStateOf("") }
+    var capacity by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
 
@@ -100,8 +97,8 @@ fun CreatePostScreen(
 
             InputField(
                 label = "제목",
-                value = title,
-                onValueChange = { title = it },
+                value = groupName,
+                onValueChange = { groupName = it },
                 placeholder = "공고 제목을 입력하세요",
                 isRequired = true
             )
@@ -109,19 +106,10 @@ fun CreatePostScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             InputField(
-                label = "분야",
-                value = field,
-                onValueChange = { field = it },
-                placeholder = "예: 영어, IT/개발"
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            InputField(
-                label = "일시",
-                value = date,
-                onValueChange = { date = it },
-                placeholder = "예: 매주 화, 목 오후 7시"
+                label = "인원",
+                value = capacity,
+                onValueChange = { capacity = it },
+                placeholder = "10"
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -173,9 +161,9 @@ fun CreatePostScreen(
                 }
                 Button(
                     onClick = {
-                        if (title.isNotBlank() && description.isNotBlank()) {
+                        if (groupName.isNotBlank() && description.isNotBlank()) {
                             val request = GroupCreateRequest(
-                                groupName = title,
+                                groupName = groupName,
                                 description = description,
                                 categoryId = when (selectedCategory) {
                                     "스터디" -> 1
@@ -185,7 +173,7 @@ fun CreatePostScreen(
                                     else -> 1
                                 },
                                 subCategoryId = 1,
-                                capacity = null,
+                                capacity = capacity.toIntOrNull(),
                                 isOnline = location.contains("온라인", ignoreCase = true) || location.contains("online", ignoreCase = true),
                                 location = location
                             )

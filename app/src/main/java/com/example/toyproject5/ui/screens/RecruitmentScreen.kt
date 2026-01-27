@@ -180,24 +180,31 @@ fun GroupCardItem(group: GroupResponse, onClick: () -> Unit) {
                     color = Color(0xFFDBEAFE),
                     shape = RoundedCornerShape(4.dp)
                 ) {
+                    val categoryName = when (group.categoryId) {
+                        1 -> "스터디"
+                        2 -> "고시"
+                        3 -> "취준"
+                        4 -> "대외활동"
+                        else -> "기타"
+                    }
                     Text(
-                        text = if (group.isOnline) "온라인" else "오프라인",
+                        text = categoryName,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         color = Color(0xFF1447E6),
                         fontSize = 12.sp
                     )
                 }
-                Text(text = group.createdAt.take(10), color = Color(0xFF6A7282), fontSize = 12.sp)
+                Text(text = group.createdAt?.take(10) ?: "", color = Color(0xFF6A7282), fontSize = 12.sp)
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Text(text = group.groupName, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text(text = group.groupName ?: "", fontSize = 16.sp, fontWeight = FontWeight.Bold)
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = group.description,
+                text = group.description ?: "",
                 fontSize = 14.sp,
                 color = Color(0xFF4A5565),
                 maxLines = 2
@@ -207,7 +214,7 @@ fun GroupCardItem(group: GroupResponse, onClick: () -> Unit) {
 
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 PostInfoRow(icon = Icons.Default.Star, text = "정원: ${group.capacity ?: "무제한"}")
-                PostInfoRow(icon = Icons.Default.LocationOn, text = group.location)
+                PostInfoRow(icon = Icons.Default.LocationOn, text = group.location ?: "")
             }
         }
     }

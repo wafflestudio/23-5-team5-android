@@ -29,7 +29,7 @@ object NetworkModule {
 
         return OkHttpClient.Builder()
             .addInterceptor(logging)
-            .addInterceptor(logging)
+            .addInterceptor(authInterceptor)
             .build()
     }
 
