@@ -13,6 +13,9 @@ import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -20,15 +23,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.toyproject5.data.Post
-import com.example.toyproject5.data.mockPosts
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.toyproject5.dto.GroupResponse
+import com.example.toyproject5.viewmodel.GroupViewModel
 
 @Composable
 fun MyPostScreen(
-    onPostClick: (String) -> Unit,
-    onParticipantsClick: (String) -> Unit
+    onPostClick: (Int) -> Unit,
+    onParticipantsClick: (Int) -> Unit,
+    viewModel: GroupViewModel = hiltViewModel()
 ) {
-    val myPosts = mockPosts.filter { it.userId == "user1" }
+    val myPosts by viewModel.myGroups.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.fetchMyGroups()
+    }
 
     Column(
         modifier = Modifier
@@ -54,7 +64,11 @@ fun MyPostScreen(
             )
         }
 
-        if (myPosts.isEmpty()) {
+        if (isLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        } else if (myPosts.isEmpty()) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -73,9 +87,11 @@ fun MyPostScreen(
             ) {
                 items(myPosts) { post ->
                     MyPostCard(
-                        post = post, 
+                        group = post, 
                         onClick = { onPostClick(post.id) },
-                        onViewParticipants = { onParticipantsClick(post.id) }
+                        onViewParticipants = { onParticipantsClick(post.id) },
+                        onExpire = { viewModel.expireGroup(post.id) },
+                        onDelete = { viewModel.withdrawFromGroup(post.id) } // Requested DELETE /api/groups/join
                     )
                 }
             }
@@ -85,10 +101,21 @@ fun MyPostScreen(
 
 @Composable
 fun MyPostCard(
-    post: Post, 
+    group: GroupResponse, 
     onClick: () -> Unit,
-    onViewParticipants: () -> Unit
+    onViewParticipants: () -> Unit,
+    onExpire: () -> Unit,
+    onDelete: () -> Unit
 ) {
+    val isClosed = group.status != "RECRUITING"
+    val categoryName = when(group.categoryId) {
+        1 -> "스터디"
+        2 -> "고시"
+        3 -> "취준"
+        4 -> "대외활동"
+        else -> "기타"
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -104,34 +131,34 @@ fun MyPostCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
-                    color = if (post.isClosed) Color(0xFFF3F4F6) else Color(0xFFF3E8FF),
+                    color = if (isClosed) Color(0xFFF3F4F6) else Color(0xFFF3E8FF),
                     shape = RoundedCornerShape(4.dp)
                 ) {
                     Text(
-                        text = if (post.isClosed) "마감됨" else post.category,
+                        text = if (isClosed) "마감됨" else categoryName,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        color = if (post.isClosed) Color(0xFF6A7282) else Color(0xFF8200DB),
+                        color = if (isClosed) Color(0xFF6A7282) else Color(0xFF8200DB),
                         fontSize = 12.sp
                     )
                 }
-                Text(text = post.createdAt, color = Color(0xFF6A7282), fontSize = 12.sp)
+                Text(text = group.createdAt.take(10), color = Color(0xFF6A7282), fontSize = 12.sp)
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = post.title,
+                text = group.groupName,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                color = if (post.isClosed) Color(0xFF99A1AF) else Color(0xFF0A0A0A)
+                color = if (isClosed) Color(0xFF99A1AF) else Color(0xFF0A0A0A)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = post.description,
+                text = group.description,
                 fontSize = 14.sp,
-                color = if (post.isClosed) Color(0xFF99A1AF) else Color(0xFF4A5565),
+                color = if (isClosed) Color(0xFF99A1AF) else Color(0xFF4A5565),
                 maxLines = 2
             )
 
@@ -142,17 +169,18 @@ fun MyPostCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 OutlinedButton(
-                    onClick = { /* 마감하기 로직 */ },
+                    onClick = onExpire,
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(8.dp),
-                    contentPadding = PaddingValues(vertical = 8.dp)
+                    contentPadding = PaddingValues(vertical = 8.dp),
+                    enabled = !isClosed
                 ) {
                     Icon(Icons.Default.Done, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("마감하기", fontSize = 14.sp)
                 }
                 OutlinedButton(
-                    onClick = { /* 삭제하기 로직 */ },
+                    onClick = onDelete,
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(8.dp),
                     contentPadding = PaddingValues(vertical = 8.dp),

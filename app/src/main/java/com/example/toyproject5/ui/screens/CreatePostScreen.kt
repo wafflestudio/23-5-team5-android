@@ -15,10 +15,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.toyproject5.dto.GroupCreateRequest
+import com.example.toyproject5.viewmodel.GroupViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreatePostScreen(onBack: () -> Unit) {
+fun CreatePostScreen(
+    onBack: () -> Unit,
+    viewModel: GroupViewModel = hiltViewModel()
+) {
     var selectedCategory by remember { mutableStateOf("스터디") }
     var title by remember { mutableStateOf("") }
     var field by remember { mutableStateOf("") }
@@ -48,14 +54,14 @@ fun CreatePostScreen(onBack: () -> Unit) {
                 .padding(16.dp)
         ) {
             // Category Selection
-            Text(
-                text = buildString {
-                    append("카테고리")
-                },
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium
-            )
-            Text(text = "*", color = Color.Red, fontSize = 14.sp)
+            Row {
+                Text(
+                    text = "카테고리",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(text = " *", color = Color.Red, fontSize = 14.sp)
+            }
             
             Spacer(modifier = Modifier.height(8.dp))
             
@@ -166,7 +172,28 @@ fun CreatePostScreen(onBack: () -> Unit) {
                     Text("취소", color = Color(0xFF364153), fontWeight = FontWeight.Bold)
                 }
                 Button(
-                    onClick = { /* 등록 로직 */ },
+                    onClick = {
+                        if (title.isNotBlank() && description.isNotBlank()) {
+                            val request = GroupCreateRequest(
+                                groupName = title,
+                                description = description,
+                                categoryId = when (selectedCategory) {
+                                    "스터디" -> 1
+                                    "고시" -> 2
+                                    "취준" -> 3
+                                    "대외활동" -> 4
+                                    else -> 1
+                                },
+                                subCategoryId = 1,
+                                capacity = null,
+                                isOnline = location.contains("온라인", ignoreCase = true) || location.contains("online", ignoreCase = true),
+                                location = location
+                            )
+                            viewModel.createGroup(request) {
+                                onBack()
+                            }
+                        }
+                    },
                     modifier = Modifier
                         .weight(1f)
                         .height(48.dp),

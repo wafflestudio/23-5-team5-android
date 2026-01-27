@@ -9,7 +9,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
@@ -22,24 +21,40 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.toyproject5.data.Post
-import com.example.toyproject5.data.mockPosts
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.toyproject5.dto.GroupResponse
+import com.example.toyproject5.viewmodel.GroupViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecruitmentScreen(
-    onPostClick: (String) -> Unit,
-    onCreatePostClick: () -> Unit
+    onPostClick: (Int) -> Unit,
+    onCreatePostClick: () -> Unit,
+    viewModel: GroupViewModel = hiltViewModel()
 ) {
     var searchQuery by remember { mutableStateOf("") }
-    var selectedCategory by remember { mutableStateOf("전체") }
-    val categories = listOf("전체", "스터디", "고시", "취준", "대외활동")
+    var selectedCategoryId by remember { mutableStateOf<Int?>(null) }
+    
+    val groups by viewModel.groups.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
 
-    val filteredPosts = mockPosts.filter { post ->
-        (selectedCategory == "전체" || post.category == selectedCategory) &&
-                (post.title.contains(searchQuery, ignoreCase = true) ||
-                        post.description.contains(searchQuery, ignoreCase = true))
+    // Fetch groups on initial load and when search/category changes
+    // API Specification: GET /api/groups/search?categoryId=X&keyword=Y
+    LaunchedEffect(searchQuery, selectedCategoryId) {
+        viewModel.searchGroups(
+            categoryId = selectedCategoryId, 
+            keyword = searchQuery.ifBlank { null }
+        )
     }
+
+    val categories = listOf(
+        CategoryItem("전체", null),
+        CategoryItem("스터디", 1),
+        CategoryItem("고시", 2),
+        CategoryItem("취준", 3),
+        CategoryItem("대외활동", 4)
+    )
 
     Column(
         modifier = Modifier
@@ -91,14 +106,14 @@ fun RecruitmentScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(categories) { category ->
-                val isSelected = selectedCategory == category
+                val isSelected = selectedCategoryId == category.id
                 Surface(
-                    onClick = { selectedCategory = category },
+                    onClick = { selectedCategoryId = category.id },
                     color = if (isSelected) Color(0xFF155DFC) else Color(0xFFF3F4F6),
                     shape = RoundedCornerShape(20.dp),
                 ) {
                     Text(
-                        text = category,
+                        text = category.name,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                         color = if (isSelected) Color.White else Color(0xFF364153),
                         fontSize = 14.sp
@@ -109,21 +124,44 @@ fun RecruitmentScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Post List
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(filteredPosts) { post ->
-                PostCardItem(post = post, onClick = { onPostClick(post.id) })
+        if (isLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        } else if (error != null) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(text = error ?: "알 수 없는 오류가 발생했습니다.", color = Color.Red)
+                    Button(onClick = { viewModel.searchGroups(selectedCategoryId, searchQuery.ifBlank { null }) }) {
+                        Text("다시 시도")
+                    }
+                }
+            }
+        } else {
+            // Post List
+            if (groups.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(text = "검색 결과가 없습니다.", color = Color.Gray)
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(groups) { group ->
+                        GroupCardItem(group = group, onClick = { onPostClick(group.id) })
+                    }
+                }
             }
         }
     }
 }
 
+data class CategoryItem(val name: String, val id: Int?)
+
 @Composable
-fun PostCardItem(post: Post, onClick: () -> Unit) {
+fun GroupCardItem(group: GroupResponse, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -143,23 +181,23 @@ fun PostCardItem(post: Post, onClick: () -> Unit) {
                     shape = RoundedCornerShape(4.dp)
                 ) {
                     Text(
-                        text = post.category,
+                        text = if (group.isOnline) "온라인" else "오프라인",
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         color = Color(0xFF1447E6),
                         fontSize = 12.sp
                     )
                 }
-                Text(text = post.createdAt, color = Color(0xFF6A7282), fontSize = 12.sp)
+                Text(text = group.createdAt.take(10), color = Color(0xFF6A7282), fontSize = 12.sp)
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Text(text = post.title, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text(text = group.groupName, fontSize = 16.sp, fontWeight = FontWeight.Bold)
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = post.description,
+                text = group.description,
                 fontSize = 14.sp,
                 color = Color(0xFF4A5565),
                 maxLines = 2
@@ -168,9 +206,8 @@ fun PostCardItem(post: Post, onClick: () -> Unit) {
             Spacer(modifier = Modifier.height(12.dp))
 
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                PostInfoRow(icon = Icons.Default.Star, text = post.field ?: "-")
-                PostInfoRow(icon = Icons.Default.DateRange, text = post.date ?: "-")
-                PostInfoRow(icon = Icons.Default.LocationOn, text = post.location ?: "-")
+                PostInfoRow(icon = Icons.Default.Star, text = "정원: ${group.capacity ?: "무제한"}")
+                PostInfoRow(icon = Icons.Default.LocationOn, text = group.location)
             }
         }
     }

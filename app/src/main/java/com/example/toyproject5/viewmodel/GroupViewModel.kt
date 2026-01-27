@@ -1,0 +1,149 @@
+package com.example.toyproject5.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.toyproject5.dto.GroupCreateRequest
+import com.example.toyproject5.dto.GroupResponse
+import com.example.toyproject5.repository.GroupRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class GroupViewModel @Inject constructor(
+    private val repository: GroupRepository
+) : ViewModel() {
+
+    private val _groups = MutableStateFlow<List<GroupResponse>>(emptyList())
+    val groups: StateFlow<List<GroupResponse>> = _groups.asStateFlow()
+
+    private val _myGroups = MutableStateFlow<List<GroupResponse>>(emptyList())
+    val myGroups: StateFlow<List<GroupResponse>> = _myGroups.asStateFlow()
+
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error.asStateFlow()
+
+    fun createGroup(request: GroupCreateRequest, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val response = repository.createGroup(request)
+                if (response.isSuccessful) {
+                    onSuccess()
+                } else {
+                    _error.value = "Failed to create group: ${response.message()}"
+                }
+            } catch (e: Exception) {
+                _error.value = e.localizedMessage
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun searchGroups(categoryId: Int? = null, keyword: String? = null) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val response = repository.searchGroups(categoryId, keyword)
+                if (response.isSuccessful) {
+                    _groups.value = response.body() ?: emptyList()
+                } else {
+                    _error.value = "Search failed: ${response.message()}"
+                }
+            } catch (e: Exception) {
+                _error.value = e.localizedMessage
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun fetchMyGroups() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val response = repository.searchMyGroups()
+                if (response.isSuccessful) {
+                    _myGroups.value = response.body() ?: emptyList()
+                } else {
+                    _error.value = "Failed to fetch my groups"
+                }
+            } catch (e: Exception) {
+                _error.value = e.localizedMessage
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun joinGroup(groupId: Int) {
+        viewModelScope.launch {
+            try {
+                val response = repository.joinGroup(groupId)
+                if (response.isSuccessful) {
+                    fetchMyGroups()
+                } else {
+                    _error.value = "Failed to join group"
+                }
+            } catch (e: Exception) {
+                _error.value = e.localizedMessage
+            }
+        }
+    }
+
+    fun withdrawFromGroup(groupId: Int) {
+        viewModelScope.launch {
+            try {
+                val response = repository.withdrawFromGroup(groupId)
+                if (response.isSuccessful) {
+                    fetchMyGroups()
+                } else {
+                    _error.value = "Failed to withdraw from group"
+                }
+            } catch (e: Exception) {
+                _error.value = e.localizedMessage
+            }
+        }
+    }
+
+    fun expireGroup(groupId: Int) {
+        viewModelScope.launch {
+            try {
+                val response = repository.expireGroup(groupId)
+                if (response.isSuccessful) {
+                    fetchMyGroups()
+                } else {
+                    _error.value = "Failed to expire group"
+                }
+            } catch (e: Exception) {
+                _error.value = e.localizedMessage
+            }
+        }
+    }
+
+    fun deleteGroup(groupId: Int) {
+        viewModelScope.launch {
+            try {
+                val response = repository.deleteGroup(groupId)
+                if (response.isSuccessful) {
+                    fetchMyGroups()
+                } else {
+                    _error.value = "Failed to delete group"
+                }
+            } catch (e: Exception) {
+                _error.value = e.localizedMessage
+            }
+        }
+    }
+
+    fun clearError() {
+        _error.value = null
+    }
+}

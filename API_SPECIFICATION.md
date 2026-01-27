@@ -2,7 +2,7 @@
 
 ## Base Information
 
-- **Base URL**: `https://toyproject-team5.kro.kr/api`
+- **Base URL**: `http://43.203.97.212:8080`
 - **Version**: 1.0
 - **Content-Type**: `application/json` (except for file upload endpoints)
 - **Date**: 2026-01-25
@@ -39,7 +39,7 @@ Authorization: Bearer <access_token>
 
 Check if the server is running.
 
-- **Endpoint**: `GET /ping`
+- **Endpoint**: `GET /api/ping`
 - **Authentication**: Not required
 - **Response**: `200 OK`
 
@@ -55,7 +55,7 @@ pong
 
 Register a new user account.
 
-- **Endpoint**: `POST /auth/signup`
+- **Endpoint**: `POST /api/auth/signup`
 - **Authentication**: Not required
 - **Content-Type**: `application/json`
 
@@ -96,7 +96,7 @@ Register a new user account.
 
 Authenticate an existing user.
 
-- **Endpoint**: `POST /auth/login`
+- **Endpoint**: `POST /api/auth/login`
 - **Authentication**: Not required
 - **Content-Type**: `application/json`
 
@@ -130,7 +130,7 @@ Authenticate an existing user.
 
 Retrieve the authenticated user's profile information.
 
-- **Endpoint**: `GET /users/me`
+- **Endpoint**: `GET /api/users/me`
 - **Authentication**: Required (JWT)
 - **Content-Type**: `application/json`
 
@@ -156,7 +156,7 @@ Retrieve the authenticated user's profile information.
 
 Update the authenticated user's profile information.
 
-- **Endpoint**: `PATCH /users/me`
+- **Endpoint**: `PATCH /api/users/me`
 - **Authentication**: Required (JWT)
 - **Content-Type**: `multipart/form-data`
 
@@ -191,7 +191,7 @@ Update the authenticated user's profile information.
 
 Update only the profile image.
 
-- **Endpoint**: `PUT /users/me/profile-image`
+- **Endpoint**: `PUT /api/users/me/profile-image`
 - **Authentication**: Required (JWT)
 - **Content-Type**: `multipart/form-data`
 
@@ -225,7 +225,7 @@ Update only the profile image.
 
 Authenticate using Google OAuth.
 
-- **Endpoint**: `POST /oauth/login/{provider}`
+- **Endpoint**: `POST /api/oauth/login/{provider}`
 - **Authentication**: Not required
 - **Content-Type**: `application/json`
 
@@ -271,7 +271,7 @@ Authenticate using Google OAuth.
 
 Send a verification code to the user's email.
 
-- **Endpoint**: `POST /auth/code`
+- **Endpoint**: `POST /api/auth/code`
 - **Authentication**: Not required
 - **Content-Type**: `application/json`
 
@@ -299,7 +299,7 @@ Send a verification code to the user's email.
 
 Verify the email with the code sent.
 
-- **Endpoint**: `POST /auth/verify`
+- **Endpoint**: `POST /api/auth/verify`
 - **Authentication**: Not required (but requires register_token)
 - **Content-Type**: `application/json`
 
@@ -336,7 +336,7 @@ Verify the email with the code sent.
 
 Create a new study group.
 
-- **Endpoint**: `POST /groups`
+- **Endpoint**: `POST /api/groups`
 - **Authentication**: Required (JWT)
 - **Content-Type**: `application/json`
 
@@ -376,7 +376,7 @@ Create a new study group.
 
 Delete a study group. Only the group leader can delete.
 
-- **Endpoint**: `DELETE /groups`
+- **Endpoint**: `DELETE /api/groups`
 - **Authentication**: Required (JWT)
 - **Content-Type**: `application/json`
 
@@ -404,7 +404,7 @@ Delete a study group. Only the group leader can delete.
 
 Mark a group as expired (close recruitment). Only the group leader can expire.
 
-- **Endpoint**: `PATCH /groups/expire`
+- **Endpoint**: `PATCH /api/groups/expire`
 - **Authentication**: Required (JWT)
 - **Content-Type**: `application/json`
 
@@ -434,7 +434,7 @@ Mark a group as expired (close recruitment). Only the group leader can expire.
 
 Join an existing study group.
 
-- **Endpoint**: `POST /groups/join`
+- **Endpoint**: `POST /api/groups/join`
 - **Authentication**: Required (JWT)
 - **Content-Type**: `application/json`
 
@@ -462,7 +462,7 @@ Join an existing study group.
 
 Leave a study group.
 
-- **Endpoint**: `DELETE /groups/join`
+- **Endpoint**: `DELETE /api/groups/join`
 - **Authentication**: Required (JWT)
 - **Content-Type**: `application/json`
 
@@ -492,7 +492,7 @@ Leave a study group.
 
 Search for study groups by category and/or keyword.
 
-- **Endpoint**: `GET /groups/search`
+- **Endpoint**: `GET /api/groups/search`
 - **Authentication**: Not required
 - **Content-Type**: `application/json`
 
@@ -535,7 +535,7 @@ GET /groups/search?categoryId=1&keyword=algorithm
 
 Get all groups the authenticated user has joined or created.
 
-- **Endpoint**: `GET /groups/search/me`
+- **Endpoint**: `GET /api/groups/search/me`
 - **Authentication**: Required (JWT)
 - **Content-Type**: `application/json`
 

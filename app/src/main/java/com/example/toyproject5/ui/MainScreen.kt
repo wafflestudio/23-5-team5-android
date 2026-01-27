@@ -46,7 +46,7 @@ fun MainScreen() {
             composable(NavRoute.Recruitment.route) {
                 RecruitmentScreen(
                     onPostClick = { postId ->
-                        navController.navigate(NavRoute.PostDetail.createRoute(postId))
+                        navController.navigate(NavRoute.PostDetail.createRoute(postId.toString()))
                     },
                     onCreatePostClick = {
                         navController.navigate(NavRoute.CreatePost.route)
@@ -56,10 +56,10 @@ fun MainScreen() {
             composable(NavRoute.MyPost.route) {
                 MyPostScreen(
                     onPostClick = { postId ->
-                        navController.navigate(NavRoute.PostDetail.createRoute(postId))
+                        navController.navigate(NavRoute.PostDetail.createRoute(postId.toString()))
                     },
                     onParticipantsClick = { postId ->
-                        navController.navigate(NavRoute.Participants.createRoute(postId))
+                        navController.navigate(NavRoute.Participants.createRoute(postId.toString()))
                     }
                 )
             }
