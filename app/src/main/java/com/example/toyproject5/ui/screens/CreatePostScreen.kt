@@ -1,6 +1,5 @@
 package com.example.toyproject5.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -9,20 +8,24 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.toyproject5.dto.GroupCreateRequest
+import com.example.toyproject5.viewmodel.GroupViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreatePostScreen(onBack: () -> Unit) {
+fun CreatePostScreen(
+    onBack: () -> Unit,
+    viewModel: GroupViewModel = hiltViewModel()
+) {
+    var groupName by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf("스터디") }
-    var title by remember { mutableStateOf("") }
-    var field by remember { mutableStateOf("") }
-    var date by remember { mutableStateOf("") }
+    var capacity by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
 
@@ -48,14 +51,14 @@ fun CreatePostScreen(onBack: () -> Unit) {
                 .padding(16.dp)
         ) {
             // Category Selection
-            Text(
-                text = buildString {
-                    append("카테고리")
-                },
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium
-            )
-            Text(text = "*", color = Color.Red, fontSize = 14.sp)
+            Row {
+                Text(
+                    text = "카테고리",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(text = " *", color = Color.Red, fontSize = 14.sp)
+            }
             
             Spacer(modifier = Modifier.height(8.dp))
             
@@ -94,8 +97,8 @@ fun CreatePostScreen(onBack: () -> Unit) {
 
             InputField(
                 label = "제목",
-                value = title,
-                onValueChange = { title = it },
+                value = groupName,
+                onValueChange = { groupName = it },
                 placeholder = "공고 제목을 입력하세요",
                 isRequired = true
             )
@@ -103,19 +106,10 @@ fun CreatePostScreen(onBack: () -> Unit) {
             Spacer(modifier = Modifier.height(16.dp))
 
             InputField(
-                label = "분야",
-                value = field,
-                onValueChange = { field = it },
-                placeholder = "예: 영어, IT/개발"
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            InputField(
-                label = "일시",
-                value = date,
-                onValueChange = { date = it },
-                placeholder = "예: 매주 화, 목 오후 7시"
+                label = "인원",
+                value = capacity,
+                onValueChange = { capacity = it },
+                placeholder = "10"
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -166,7 +160,28 @@ fun CreatePostScreen(onBack: () -> Unit) {
                     Text("취소", color = Color(0xFF364153), fontWeight = FontWeight.Bold)
                 }
                 Button(
-                    onClick = { /* 등록 로직 */ },
+                    onClick = {
+                        if (groupName.isNotBlank() && description.isNotBlank()) {
+                            val request = GroupCreateRequest(
+                                groupName = groupName,
+                                description = description,
+                                categoryId = when (selectedCategory) {
+                                    "스터디" -> 1
+                                    "고시" -> 2
+                                    "취준" -> 3
+                                    "대외활동" -> 4
+                                    else -> 1
+                                },
+                                subCategoryId = 1,
+                                capacity = capacity.toIntOrNull(),
+                                isOnline = location.contains("온라인", ignoreCase = true) || location.contains("online", ignoreCase = true),
+                                location = location
+                            )
+                            viewModel.createGroup(request) {
+                                onBack()
+                            }
+                        }
+                    },
                     modifier = Modifier
                         .weight(1f)
                         .height(48.dp),
