@@ -4,6 +4,7 @@ import com.example.toyproject5.network.AuthApiService
 import com.example.toyproject5.network.AuthInterceptor
 import com.example.toyproject5.network.PingApiService
 import com.example.toyproject5.network.UserApiService
+import com.example.toyproject5.network.GroupApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -15,14 +16,12 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.converter.scalars.ScalarsConverterFactory
 import javax.inject.Named
-import kotlin.jvm.java
 
 @Module
 @InstallIn(SingletonComponent::class) // 앱 전체에서 이 설정을 사용하겠다는 뜻
 object NetworkModule {
 
     private const val BASE_URL = "http://43.203.97.212:8080/"
-
 
     // 공통 로그 인터셉터
     @Provides
@@ -70,7 +69,7 @@ object NetworkModule {
     ): OkHttpClient {
         return OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
-            .addInterceptor(authInterceptor) // 토큰 추가
+            .addInterceptor(authInterceptor)
             .build()
     }
 
@@ -79,7 +78,8 @@ object NetworkModule {
     @Singleton
     @Named("DefaultRetrofit")
     fun provideDefaultRetrofit(
-        @Named("DefaultClient") okHttpClient: OkHttpClient // DefaultClient를 쓰라고 지정
+        @Named("DefaultClient") okHttpClient: OkHttpClient
+        // DefaultClient를 쓰라고 지정
     ): Retrofit {
         return Retrofit.Builder()
             .baseUrl(BASE_URL)
@@ -105,5 +105,11 @@ object NetworkModule {
     @Singleton
     fun provideAuthApiService(@Named("AuthRetrofit") retrofit: Retrofit): AuthApiService {
         return retrofit.create(AuthApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideGroupApiService(@Named("DefaultRetrofit") retrofit: Retrofit): GroupApiService {
+        return retrofit.create(GroupApiService::class.java)
     }
 }
