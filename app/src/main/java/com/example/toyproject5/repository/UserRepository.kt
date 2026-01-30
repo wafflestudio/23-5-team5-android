@@ -36,7 +36,6 @@ class UserRepository @Inject constructor(
                 val body = response.body()
                 if (body != null) {
                     userDataStore.saveNickname(body.nickname)
-                    userDataStore.saveEmail(body.username)
                     body.profileImageUrl?.let { userDataStore.saveProfileImage(it) }
                     // TODO: role, bio 등 추가 저장 가능
 
@@ -69,8 +68,7 @@ class UserRepository @Inject constructor(
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {
-                    // 성공 시 토큰과 닉네임을 로컬 저장소(DataStore)에 저장
-                    userDataStore.saveNickname(body.nickname)
+                    // 성공 시 토큰 로컬 저장소(DataStore)에 저장
                     userDataStore.saveToken(body.accessToken)
 
                     // 이메일은 loginRequest에 있었음
