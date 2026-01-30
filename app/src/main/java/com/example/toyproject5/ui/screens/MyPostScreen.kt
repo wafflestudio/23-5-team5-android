@@ -12,10 +12,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -35,9 +32,60 @@ fun MyPostScreen(
 ) {
     val myPosts by viewModel.myGroups.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var showExpireDialog by remember { mutableStateOf(false) }
+    var selectedGroupId by remember { mutableStateOf<Int?>(null) }
 
     LaunchedEffect(Unit) {
         viewModel.fetchMyGroups()
+    }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("삭제 확인") },
+            text = { Text("그룹을 삭제하시겠습니까?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        selectedGroupId?.let { viewModel.deleteGroup(it) }
+                        showDeleteDialog = false
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
+                ) {
+                    Text("삭제")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("취소")
+                }
+            }
+        )
+    }
+
+    if (showExpireDialog) {
+        AlertDialog(
+            onDismissRequest = { showExpireDialog = false },
+            title = { Text("마감 확인") },
+            text = { Text("그룹 모집을 마감하시겠습니까?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        selectedGroupId?.let { viewModel.expireGroup(it) }
+                        showExpireDialog = false
+                    }
+                ) {
+                    Text("확인")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showExpireDialog = false }) {
+                    Text("취소")
+                }
+            }
+        )
     }
 
     Column(
@@ -90,8 +138,14 @@ fun MyPostScreen(
                         group = post, 
                         onClick = { onPostClick(post.id) },
                         onViewParticipants = { onParticipantsClick(post.id) },
-                        onExpire = { viewModel.expireGroup(post.id) },
-                        onDelete = { viewModel.withdrawFromGroup(post.id) } // Requested DELETE /api/groups/join
+                        onExpire = { 
+                            selectedGroupId = post.id
+                            showExpireDialog = true
+                        },
+                        onDelete = { 
+                            selectedGroupId = post.id
+                            showDeleteDialog = true 
+                        }
                     )
                 }
             }
