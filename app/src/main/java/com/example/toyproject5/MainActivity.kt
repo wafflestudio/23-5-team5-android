@@ -51,7 +51,11 @@ class MainActivity : ComponentActivity() {
 
                 // 메인 화면 (기존에 작성하신 MainScreen)
                 composable(NavRoute.Main.route) {
-                    MainScreen()
+                    MainScreen(onLogout = {
+                        rootNavController.navigate(NavRoute.Login.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    })
                 }
             }
         }

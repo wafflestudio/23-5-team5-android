@@ -1,5 +1,6 @@
 package com.example.toyproject5.ui
 
+import android.util.Log
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -17,9 +18,11 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.toyproject5.ui.screens.*
+import com.example.toyproject5.ui.screens.auth.LoginScreen
+import com.example.toyproject5.ui.screens.auth.SignupScreen
 
 @Composable
-fun MainScreen() {
+fun MainScreen(onLogout: () -> Unit) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -63,9 +66,11 @@ fun MainScreen() {
                     }
                 )
             }
+
             composable(NavRoute.MyPage.route) {
-                MyPageScreen()
+                MyPageScreen(onNavigateToLogin = onLogout)
             }
+
             composable(
                 route = NavRoute.PostDetail.route,
                 arguments = listOf(navArgument("postId") { type = NavType.StringType })
@@ -73,9 +78,11 @@ fun MainScreen() {
                 val postId = backStackEntry.arguments?.getString("postId") ?: return@composable
                 PostDetailScreen(postId = postId, onBack = { navController.popBackStack() })
             }
+
             composable(NavRoute.CreatePost.route) {
                 CreatePostScreen(onBack = { navController.popBackStack() })
             }
+
             composable(
                 route = NavRoute.Participants.route,
                 arguments = listOf(navArgument("postId") { type = NavType.StringType })
@@ -104,7 +111,7 @@ fun BottomBar(navController: NavHostController) {
                 selected = currentRoute == item.route,
                 onClick = {
                     navController.navigate(item.route) {
-                        popUpTo(navController.graph.startDestinationId) { saveState = true }
+                        popUpTo(NavRoute.Recruitment.route) { saveState = true }
                         launchSingleTop = true
                         restoreState = true
                     }

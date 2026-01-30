@@ -73,6 +73,17 @@ class MyPageViewModel @Inject constructor(
         }
     }
 
+    // 로그아웃
+    private val _isLoggedOut = MutableStateFlow(false)
+    val isLoggedOut = _isLoggedOut.asStateFlow()
+
+    fun logout() {
+        viewModelScope.launch {
+            userRepository.logout()
+            _isLoggedOut.value = true // 로그아웃 성공 신호!
+        }
+    }
+
     // 닉네임 변경
     fun updateNickname(newName: String) {
         viewModelScope.launch {
