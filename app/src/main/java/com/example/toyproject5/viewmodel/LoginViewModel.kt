@@ -40,18 +40,17 @@ class LoginViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
             // Repository에 보낼 요청 객체
-            val request = LoginRequest(
+            val loginRequest = LoginRequest(
                 email = email.value,
                 password = password.value
             )
 
             // Repository의 로그인 함수를 호출하고 결과 받기
-            val result = userRepository.login(request)
-            result.onSuccess { user ->
+            val result = userRepository.login(loginRequest)
+            result.onSuccess {
                 // 로그인 성공 시
-                _uiState.update {
-                    it.copy(isLoading = false, isLoginSuccess = true)
-                }
+                syncUserInfo()
+
             }.onFailure { exception ->
                 // 로그인 실패 시
                 _uiState.update {
@@ -59,5 +58,15 @@ class LoginViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    private suspend fun syncUserInfo() {
+        userRepository.fetchMyInfo()
+            .onSuccess {
+                _uiState.update { it.copy(isLoading = false, isLoginSuccess = true) }
+            }
+            .onFailure { e ->
+                _uiState.update { it.copy(isLoading = false, errorMessage = "프로필 정보 동기화 실패") }
+            }
     }
 }
