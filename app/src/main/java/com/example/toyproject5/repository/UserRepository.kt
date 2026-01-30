@@ -27,9 +27,7 @@ class UserRepository @Inject constructor(
         userDataStore.saveNickname(newName)
     }
 
-    /**
-     * 서버에서 현재 로그인된 유저의 상세 정보를 가져와 로컬 DataStore를 동기화합니다.
-     */
+    // 정보 불러오기
     suspend fun fetchMyInfo(): Result<UserMeResponse> {
         return try {
             val response = userApiService.getUserMe()
@@ -90,6 +88,11 @@ class UserRepository @Inject constructor(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    // 로그아웃
+    suspend fun logout() {
+        userDataStore.clearUserData()
     }
 
     // 이미지

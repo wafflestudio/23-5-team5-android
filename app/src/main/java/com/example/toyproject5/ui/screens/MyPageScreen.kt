@@ -36,11 +36,13 @@ import com.example.toyproject5.viewmodel.PingViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyPageScreen(pingViewModel: PingViewModel = hiltViewModel(),
-                 myPageViewModel: MyPageViewModel = hiltViewModel()) {
+                 myPageViewModel: MyPageViewModel = hiltViewModel(),
+                 onNavigateToLogin: () -> Unit) {
     var showNicknameDialog by remember { mutableStateOf(false) }
     var showProfilePicDialog by remember { mutableStateOf(false) }
     val uiState by myPageViewModel.uiState.collectAsState()
     val pingMessage by pingViewModel.pingState.collectAsState()
+    val isLoggedOut by myPageViewModel.isLoggedOut.collectAsState()
 
     // 파일 처리
     val context = LocalContext.current
@@ -50,6 +52,13 @@ fun MyPageScreen(pingViewModel: PingViewModel = hiltViewModel(),
         // [결과 처리] 사용자가 사진을 고르면 이곳으로 사진 주소(uri)가 들어옵니다.
         uri?.let {
             myPageViewModel.uploadProfileImage(it)
+        }
+    }
+
+    // 로그아웃
+    LaunchedEffect(isLoggedOut) {
+        if (isLoggedOut) {
+            onNavigateToLogin()
         }
     }
 
@@ -83,7 +92,7 @@ fun MyPageScreen(pingViewModel: PingViewModel = hiltViewModel(),
             Spacer(modifier = Modifier.height(32.dp))
 
             // 로그아웃 버튼
-            LogoutButton(onLogoutClick = { /* 로그아웃 로직 처리 */ })
+            LogoutButton(onLogoutClick = { myPageViewModel.logout() })
 
             Spacer(modifier = Modifier.height(32.dp))
 
