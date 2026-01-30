@@ -40,18 +40,29 @@ class LoginViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
             // Repository에 보낼 요청 객체
-            val request = LoginRequest(
+            val loginRequest = LoginRequest(
                 email = email.value,
                 password = password.value
             )
 
             // Repository의 로그인 함수를 호출하고 결과 받기
-            val result = userRepository.login(request)
+            val result = userRepository.login(loginRequest)
             result.onSuccess { user ->
                 // 로그인 성공 시
-                _uiState.update {
-                    it.copy(isLoading = false, isLoginSuccess = true)
+                val infoResult = userRepository.fetchMyInfo()
+
+                infoResult.onSuccess { userMe ->
+                    // 최종 성공: 유저 정보까지 다 가져왔을 때 성공 처리
+                    _uiState.update {
+                        it.copy(isLoading = false, isLoginSuccess = true)
+                    }
+                }.onFailure { e ->
+                    // 로그인엔 성공했지만 정보를 못 가져온 경우
+                    _uiState.update {
+                        it.copy(isLoading = false, errorMessage = "유저 정보를 불러오는데 실패했습니다.")
+                    }
                 }
+
             }.onFailure { exception ->
                 // 로그인 실패 시
                 _uiState.update {

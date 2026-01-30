@@ -1,7 +1,7 @@
 package com.example.toyproject5.network
 
 import com.example.toyproject5.dto.ImageResponse
-import com.example.toyproject5.dto.LoginResponse
+import com.example.toyproject5.dto.UserMeResponse
 import okhttp3.MultipartBody
 import retrofit2.Response
 import retrofit2.http.GET
@@ -19,5 +19,5 @@ interface UserApiService {
 
     // 내 정보 가져오기 (자동 로그인 확인용)
     @GET("api/users/me")
-    suspend fun getUserInfo(): Response<LoginResponse>
+    suspend fun getUserMe(): Response<UserMeResponse>
 }

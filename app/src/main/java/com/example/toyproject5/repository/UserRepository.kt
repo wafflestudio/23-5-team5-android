@@ -3,6 +3,7 @@ package com.example.toyproject5.repository
 import com.example.toyproject5.data.local.UserPreferences
 import com.example.toyproject5.dto.LoginRequest
 import com.example.toyproject5.dto.LoginResponse
+import com.example.toyproject5.dto.UserMeResponse
 import com.example.toyproject5.network.AuthApiService
 import com.example.toyproject5.network.UserApiService
 import javax.inject.Inject
@@ -24,6 +25,35 @@ class UserRepository @Inject constructor(
     suspend fun updateNickname(newName: String) {
         // 나중에 여기에 서버 통신 코드(apiService.updateNickname)가 추가될 예정
         userDataStore.saveNickname(newName)
+    }
+
+    /**
+     * 서버에서 현재 로그인된 유저의 상세 정보를 가져와 로컬 DataStore를 동기화합니다.
+     */
+    suspend fun fetchMyInfo(): Result<UserMeResponse> {
+        return try {
+            val response = userApiService.getUserMe()
+
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) {
+                    userDataStore.saveNickname(body.nickname)
+                    userDataStore.saveEmail(body.username)
+                    body.profileImageUrl?.let { userDataStore.saveProfileImage(it) }
+                    // TODO: role, bio 등 추가 저장 가능
+
+                    Result.success(body)
+                } else {
+                    Result.failure(Exception("응답 데이터가 비어있습니다."))
+                }
+            } else {
+                // 401(만료) 또는 404(없음) 등의 에러 처리
+                Result.failure(Exception("유저 정보를 가져오지 못했습니다. (코드: ${response.code()}, 에러명: ${response.message()})"))
+            }
+        } catch (e: Exception) {
+            // 네트워크 연결 오류 등
+            Result.failure(e)
+        }
     }
 
     // 로그인 함수

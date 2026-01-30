@@ -12,6 +12,19 @@ data class LoginResponse(
     @SerializedName("nickname") val nickname: String,
     @SerializedName("is_verified") val isVerified: Boolean
 )
+
+data class UserMeResponse(
+    @SerializedName("user_id") val userId: Long,
+    val username: String,
+    val major: String,
+    @SerializedName("student_number") val studentNumber: String,
+    val nickname: String,
+    @SerializedName("profile_image_url") val profileImageUrl: String?,
+    val bio: String?,
+    val role: String,
+    @SerializedName("created_at") val createdAt: String
+)
+
 data class ImageResponse(
     @SerializedName("user_id") val userId: Int,
     @SerializedName("username") val username: String,
