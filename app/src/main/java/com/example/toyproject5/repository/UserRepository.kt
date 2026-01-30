@@ -2,7 +2,7 @@ package com.example.toyproject5.repository
 
 import com.example.toyproject5.data.local.UserPreferences
 import com.example.toyproject5.dto.LoginRequest
-import com.example.toyproject5.dto.UserResponse
+import com.example.toyproject5.dto.LoginResponse
 import com.example.toyproject5.network.AuthApiService
 import com.example.toyproject5.network.UserApiService
 import javax.inject.Inject
@@ -26,12 +26,13 @@ class UserRepository @Inject constructor(
         userDataStore.saveNickname(newName)
     }
 
+    // 로그인 함수
     /**
-     * [로그인 함수]
+     * [일반 로그인 함수]
      * @param loginRequest: 이메일과 비밀번호가 담긴 객체
      * @return Result<UserResponse>: 성공 또는 실패 결과를 캡슐화하여 반환
      */
-    suspend fun login(loginRequest: LoginRequest): Result<UserResponse> {
+    suspend fun login(loginRequest: LoginRequest): Result<LoginResponse> {
         return try {
             // 실제 서버 API 호출
             val response = authApiService.login(loginRequest)

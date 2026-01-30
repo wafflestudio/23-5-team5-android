@@ -7,7 +7,7 @@ data class LoginRequest(
     @SerializedName("password") val password: String
 )
 
-data class UserResponse(
+data class LoginResponse(
     @SerializedName("access_token") val accessToken: String,
     @SerializedName("nickname") val nickname: String,
     @SerializedName("is_verified") val isVerified: Boolean
