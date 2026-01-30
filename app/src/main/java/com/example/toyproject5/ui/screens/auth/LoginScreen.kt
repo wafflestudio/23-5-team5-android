@@ -1,31 +1,34 @@
 package com.example.toyproject5.ui.screens.auth
 
-import androidx.compose.foundation.background
+import android.content.Context
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.automirrored.filled.Login
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.toyproject5.viewmodel.LoginViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
@@ -38,6 +41,8 @@ fun LoginScreen(
     val uiState by viewModel.uiState.collectAsState()
 
     var isPasswordVisible by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
     // 2. 비즈니스 로직에 따른 'Side Effect' 처리 (성공 시 화면 이동)
     LaunchedEffect(uiState.isLoginSuccess) {
@@ -46,7 +51,6 @@ fun LoginScreen(
         }
     }
 
-    // 이미지의 어두운 배경색 느낌을 위해 검정색 계열 배경 설정
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -54,22 +58,19 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // 1. 로고 아이콘 (파란색 원형 아이콘)
+        // 1. 로고 아이콘
         Surface(
             modifier = Modifier.size(60.dp),
             shape = CircleShape,
             color = Color(0xFF2563EB)
         ) {
             Icon(
-                // Login 아이콘 사용
                 imageVector = Icons.AutoMirrored.Filled.Login,
                 contentDescription = "App Logo",
                 tint = Color.White,
-                modifier = Modifier.padding(15.dp) // 내부 아이콘 크기를 맞추기 위해 패딩
+                modifier = Modifier.padding(15.dp)
             )
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -107,18 +108,14 @@ fun LoginScreen(
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("비밀번호를 입력하세요") },
             leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
-            // 2. 가시성 상태에 따라 변환 설정
             visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             singleLine = true,
             shape = RoundedCornerShape(12.dp),
-            // 3. 우측에 눈 모양 아이콘 버튼 추가
             trailingIcon = {
                 val image = if (isPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
-                val description = if (isPasswordVisible) "비밀번호 숨기기" else "비밀번호 보이기"
-
                 IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
-                    Icon(imageVector = image, contentDescription = description)
+                    Icon(imageVector = image, contentDescription = null)
                 }
             }
         )
@@ -128,14 +125,38 @@ fun LoginScreen(
         // 5. 로그인 버튼
         Button(
             onClick = { viewModel.login() },
-            enabled = !uiState.isLoading, // 로딩 중 클릭 방지
+            enabled = !uiState.isLoading,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
         ) {
-            Text(text = "로그인", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            if (uiState.isLoading) {
+                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+            } else {
+                Text(text = "로그인", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Google 로그인 버튼
+        OutlinedButton(
+            onClick = {
+                coroutineScope.launch {
+                    handleGoogleLogin(context, viewModel)
+                }
+            },
+            enabled = !uiState.isLoading,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.dp, Color.LightGray),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black)
+        ) {
+            Text(text = "Google 계정으로 로그인", fontSize = 16.sp)
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -154,5 +175,18 @@ fun LoginScreen(
                 modifier = Modifier.clickable { onSignupClick() }
             )
         }
+
+        if (uiState.errorMessage != null) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = uiState.errorMessage!!,
+                color = MaterialTheme.colorScheme.error,
+                fontSize = 12.sp,
+                textAlign = TextAlign.Center
+            )
+        }
     }
+}
+
+private suspend fun handleGoogleLogin(context: Context, viewModel: LoginViewModel) {
 }
