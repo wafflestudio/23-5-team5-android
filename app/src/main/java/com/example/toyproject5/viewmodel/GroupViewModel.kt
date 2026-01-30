@@ -53,7 +53,7 @@ class GroupViewModel @Inject constructor(
             try {
                 val response = repository.searchGroups(categoryId, keyword)
                 if (response.isSuccessful) {
-                    _groups.value = response.body() ?: emptyList()
+                    _groups.value = response.body()?.content ?: emptyList()
                 } else {
                     _error.value = "Search failed: ${response.message()}"
                 }
@@ -71,7 +71,7 @@ class GroupViewModel @Inject constructor(
             try {
                 val response = repository.searchMyGroups()
                 if (response.isSuccessful) {
-                    _myGroups.value = response.body() ?: emptyList()
+                    _myGroups.value = response.body()?.content ?: emptyList()
                 } else {
                     _error.value = "Failed to fetch my groups"
                 }

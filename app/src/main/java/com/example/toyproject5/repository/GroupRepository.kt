@@ -4,6 +4,7 @@ import com.example.toyproject5.dto.GroupCreateRequest
 import com.example.toyproject5.dto.GroupIdRequest
 import com.example.toyproject5.dto.GroupJoinRequest
 import com.example.toyproject5.dto.GroupResponse
+import com.example.toyproject5.dto.GroupSearchResponse
 import com.example.toyproject5.network.GroupApiService
 import retrofit2.Response
 import javax.inject.Inject
@@ -28,9 +29,9 @@ class GroupRepository @Inject constructor(
     suspend fun withdrawFromGroup(groupId: Int): Response<Unit> =
         apiService.withdrawFromGroup(GroupJoinRequest(groupId))
 
-    suspend fun searchGroups(categoryId: Int?, keyword: String?): Response<List<GroupResponse>> =
+    suspend fun searchGroups(categoryId: Int?, keyword: String?): Response<GroupSearchResponse> =
         apiService.searchGroups(categoryId, keyword)
 
-    suspend fun searchMyGroups(): Response<List<GroupResponse>> =
+    suspend fun searchMyGroups(): Response<GroupSearchResponse> =
         apiService.searchMyGroups()
 }

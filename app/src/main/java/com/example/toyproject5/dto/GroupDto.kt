@@ -45,3 +45,10 @@ data class GroupResponse(
     @SerializedName("status") val status: String,
     @SerializedName("created_at") val createdAt: String?
 )
+
+/**
+ * Wrapper for paginated group search results
+ */
+data class GroupSearchResponse(
+    @SerializedName("content") val content: List<GroupResponse>
+)

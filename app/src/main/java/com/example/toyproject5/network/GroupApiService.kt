@@ -4,6 +4,7 @@ import com.example.toyproject5.dto.GroupCreateRequest
 import com.example.toyproject5.dto.GroupIdRequest
 import com.example.toyproject5.dto.GroupJoinRequest
 import com.example.toyproject5.dto.GroupResponse
+import com.example.toyproject5.dto.GroupSearchResponse
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -44,8 +45,8 @@ interface GroupApiService {
     suspend fun searchGroups(
         @Query("categoryId") categoryId: Int? = null,
         @Query("keyword") keyword: String? = null
-    ): Response<List<GroupResponse>>
+    ): Response<GroupSearchResponse>
 
     @GET("api/groups/search/me")
-    suspend fun searchMyGroups(): Response<List<GroupResponse>>
+    suspend fun searchMyGroups(): Response<GroupSearchResponse>
 }
