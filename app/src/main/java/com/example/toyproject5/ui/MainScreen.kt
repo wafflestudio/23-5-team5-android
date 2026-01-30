@@ -17,12 +17,17 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.toyproject5.ui.screens.*
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.toyproject5.viewmodel.GroupViewModel
 
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+    
+    // Shared ViewModel for group-related screens to facilitate data passing
+    val groupViewModel: GroupViewModel = hiltViewModel()
 
     // 상세 페이지 및 작성 페이지에서는 바텀바를 숨깁니다.
     val showBottomBar = currentRoute in listOf(
@@ -45,22 +50,26 @@ fun MainScreen() {
         ) {
             composable(NavRoute.Recruitment.route) {
                 RecruitmentScreen(
-                    onPostClick = { postId ->
-                        navController.navigate(NavRoute.PostDetail.createRoute(postId.toString()))
+                    onPostClick = { group ->
+                        groupViewModel.selectGroup(group)
+                        navController.navigate(NavRoute.PostDetail.createRoute(group.id.toString()))
                     },
                     onCreatePostClick = {
                         navController.navigate(NavRoute.CreatePost.route)
-                    }
+                    },
+                    viewModel = groupViewModel
                 )
             }
             composable(NavRoute.MyPost.route) {
                 MyPostScreen(
-                    onPostClick = { postId ->
-                        navController.navigate(NavRoute.PostDetail.createRoute(postId.toString()))
+                    onPostClick = { groupId ->
+                        groupViewModel.selectGroupById(groupId)
+                        navController.navigate(NavRoute.PostDetail.createRoute(groupId.toString()))
                     },
                     onParticipantsClick = { postId ->
                         navController.navigate(NavRoute.Participants.createRoute(postId.toString()))
-                    }
+                    },
+                    viewModel = groupViewModel
                 )
             }
             composable(NavRoute.MyPage.route) {
@@ -71,7 +80,11 @@ fun MainScreen() {
                 arguments = listOf(navArgument("postId") { type = NavType.StringType })
             ) { backStackEntry ->
                 val postId = backStackEntry.arguments?.getString("postId") ?: return@composable
-                PostDetailScreen(postId = postId, onBack = { navController.popBackStack() })
+                PostDetailScreen(
+                    postId = postId, 
+                    onBack = { navController.popBackStack() },
+                    viewModel = groupViewModel
+                )
             }
             composable(NavRoute.CreatePost.route) {
                 CreatePostScreen(onBack = { navController.popBackStack() })

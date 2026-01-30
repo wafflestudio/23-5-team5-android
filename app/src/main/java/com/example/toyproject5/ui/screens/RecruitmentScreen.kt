@@ -28,7 +28,7 @@ import com.example.toyproject5.viewmodel.GroupViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecruitmentScreen(
-    onPostClick: (Int) -> Unit,
+    onPostClick: (GroupResponse) -> Unit,
     onCreatePostClick: () -> Unit,
     viewModel: GroupViewModel = hiltViewModel()
 ) {
@@ -150,7 +150,7 @@ fun RecruitmentScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(groups) { group ->
-                        GroupCardItem(group = group, onClick = { onPostClick(group.id) })
+                        GroupCardItem(group = group, onClick = { onPostClick(group) })
                     }
                 }
             }

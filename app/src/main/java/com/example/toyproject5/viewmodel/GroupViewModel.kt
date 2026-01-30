@@ -23,11 +23,26 @@ class GroupViewModel @Inject constructor(
     private val _myGroups = MutableStateFlow<List<GroupResponse>>(emptyList())
     val myGroups: StateFlow<List<GroupResponse>> = _myGroups.asStateFlow()
 
+    private val _selectedGroup = MutableStateFlow<GroupResponse?>(null)
+    val selectedGroup: StateFlow<GroupResponse?> = _selectedGroup.asStateFlow()
+
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
+
+    fun selectGroup(group: GroupResponse) {
+        _selectedGroup.value = group
+    }
+
+    fun selectGroupById(groupId: Int) {
+        // Search in already fetched lists
+        val group = _groups.value.find { it.id == groupId } ?: _myGroups.value.find { it.id == groupId }
+        if (group != null) {
+            _selectedGroup.value = group
+        }
+    }
 
     fun createGroup(request: GroupCreateRequest, onSuccess: () -> Unit) {
         viewModelScope.launch {
@@ -83,11 +98,12 @@ class GroupViewModel @Inject constructor(
         }
     }
 
-    fun joinGroup(groupId: Int) {
+    fun joinGroup(groupId: Int, onSuccess: () -> Unit = {}) {
         viewModelScope.launch {
             try {
                 val response = repository.joinGroup(groupId)
                 if (response.isSuccessful) {
+                    onSuccess()
                     fetchMyGroups()
                 } else {
                     _error.value = "Failed to join group"
