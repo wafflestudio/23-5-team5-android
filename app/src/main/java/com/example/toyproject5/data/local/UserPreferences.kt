@@ -85,4 +85,13 @@ class UserPreferences @Inject constructor(
             preferences[TOKEN_KEY] = token
         }
     }
+
+    // 로그이웃: 모든 정보 삭제
+    suspend fun clearUserData() {
+        dataStore.edit { preferences ->
+            preferences.clear()
+        }
+    }
+
+
 }

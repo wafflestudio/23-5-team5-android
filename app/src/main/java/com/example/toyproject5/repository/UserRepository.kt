@@ -2,7 +2,8 @@ package com.example.toyproject5.repository
 
 import com.example.toyproject5.data.local.UserPreferences
 import com.example.toyproject5.dto.LoginRequest
-import com.example.toyproject5.dto.UserResponse
+import com.example.toyproject5.dto.LoginResponse
+import com.example.toyproject5.dto.UserMeResponse
 import com.example.toyproject5.network.AuthApiService
 import com.example.toyproject5.network.UserApiService
 import javax.inject.Inject
@@ -26,12 +27,39 @@ class UserRepository @Inject constructor(
         userDataStore.saveNickname(newName)
     }
 
+    // 정보 불러오기
+    suspend fun fetchMyInfo(): Result<UserMeResponse> {
+        return try {
+            val response = userApiService.getUserMe()
+
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) {
+                    userDataStore.saveNickname(body.nickname)
+                    body.profileImageUrl?.let { userDataStore.saveProfileImage(it) }
+                    // TODO: role, bio 등 추가 저장 가능
+
+                    Result.success(body)
+                } else {
+                    Result.failure(Exception("응답 데이터가 비어있습니다."))
+                }
+            } else {
+                // 401(만료) 또는 404(없음) 등의 에러 처리
+                Result.failure(Exception("유저 정보를 가져오지 못했습니다. (코드: ${response.code()}, 에러명: ${response.message()})"))
+            }
+        } catch (e: Exception) {
+            // 네트워크 연결 오류 등
+            Result.failure(e)
+        }
+    }
+
+    // 로그인 함수
     /**
-     * [로그인 함수]
+     * [일반 로그인 함수]
      * @param loginRequest: 이메일과 비밀번호가 담긴 객체
      * @return Result<UserResponse>: 성공 또는 실패 결과를 캡슐화하여 반환
      */
-    suspend fun login(loginRequest: LoginRequest): Result<UserResponse> {
+    suspend fun login(loginRequest: LoginRequest): Result<LoginResponse> {
         return try {
             // 실제 서버 API 호출
             val response = authApiService.login(loginRequest)
@@ -40,8 +68,7 @@ class UserRepository @Inject constructor(
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {
-                    // 성공 시 토큰과 닉네임을 로컬 저장소(DataStore)에 저장
-                    userDataStore.saveNickname(body.nickname)
+                    // 성공 시 토큰 로컬 저장소(DataStore)에 저장
                     userDataStore.saveToken(body.accessToken)
 
                     // 이메일은 loginRequest에 있었음
@@ -59,6 +86,11 @@ class UserRepository @Inject constructor(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    // 로그아웃
+    suspend fun logout() {
+        userDataStore.clearUserData()
     }
 
     // 이미지
