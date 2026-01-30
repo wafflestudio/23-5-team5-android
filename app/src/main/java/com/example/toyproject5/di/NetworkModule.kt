@@ -16,15 +16,14 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.converter.scalars.ScalarsConverterFactory
 import javax.inject.Named
-import java.util.concurrent.TimeUnit
 
 @Module
-@InstallIn(SingletonComponent::class)
+@InstallIn(SingletonComponent::class) // 앱 전체에서 이 설정을 사용하겠다는 뜻
 object NetworkModule {
 
     private const val BASE_URL = "http://43.203.97.212:8080/"
-    private const val TIMEOUT_SECONDS = 30L
 
+    // 공통 로그 인터셉터
     @Provides
     @Singleton
     fun provideLoggingInterceptor(): HttpLoggingInterceptor {
@@ -33,6 +32,7 @@ object NetworkModule {
         }
     }
 
+    // 로그인, 회원가입 전용 OkHttpClient - 토큰 인터셉터가 없음.
     @Provides
     @Singleton
     @Named("AuthClient")
@@ -41,12 +41,10 @@ object NetworkModule {
     ): OkHttpClient {
         return OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
-            .connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-            .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-            .writeTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .build()
     }
 
+    // 로그인, 회원가입 전용 Retrofit
     @Provides
     @Singleton
     @Named("AuthRetrofit")
@@ -61,6 +59,7 @@ object NetworkModule {
             .build()
     }
 
+    // 일반 API 전용 - 토큰 인터셉터 필요.
     @Provides
     @Singleton
     @Named("DefaultClient")
@@ -71,17 +70,16 @@ object NetworkModule {
         return OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
             .addInterceptor(authInterceptor)
-            .connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-            .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-            .writeTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .build()
     }
 
+    // 일반 API 전용 Retrofit
     @Provides
     @Singleton
     @Named("DefaultRetrofit")
     fun provideDefaultRetrofit(
         @Named("DefaultClient") okHttpClient: OkHttpClient
+        // DefaultClient를 쓰라고 지정
     ): Retrofit {
         return Retrofit.Builder()
             .baseUrl(BASE_URL)
