@@ -195,31 +195,4 @@ fun LoginScreen(
 }
 
 private suspend fun handleGoogleLogin(context: Context, viewModel: LoginViewModel) {
-    val credentialManager = CredentialManager.create(context)
-
-    // TODO: Replace with your actual web client ID from Google Cloud Console
-    val webClientId = "YOUR_WEB_CLIENT_ID.apps.googleusercontent.com"
-
-    val googleIdOption: GetGoogleIdOption = GetGoogleIdOption.Builder()
-        .setFilterByAuthorizedAccounts(false)
-        .setServerClientId(webClientId)
-        .build()
-
-    val request: GetCredentialRequest = GetCredentialRequest.Builder()
-        .addCredentialOption(googleIdOption)
-        .build()
-
-    try {
-        val result = credentialManager.getCredential(
-            context = context,
-            request = request
-        )
-        val credential = result.credential
-        if (credential is GoogleIdTokenCredential) {
-            val idToken = credential.idToken
-            viewModel.onGoogleLoginSuccess(idToken)
-        }
-    } catch (e: GetCredentialException) {
-        Log.e("LoginScreen", "Google Login Failed", e)
-    }
 }
