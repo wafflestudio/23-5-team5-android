@@ -8,6 +8,7 @@ import com.example.toyproject5.network.AuthApiService
 import com.example.toyproject5.network.UserApiService
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import okhttp3.MultipartBody
 import kotlin.let
 
@@ -86,6 +87,23 @@ class UserRepository @Inject constructor(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    /**
+     * [자동 로그인 함수]
+     * 1. 로컬 DataStore에서 토큰을 꺼낸다.
+     * 2. 토큰이 없다면 바로 실패(false) 반환.
+     * 3. 토큰이 있다면 서버에 '내 정보'를 요청(fetchMyInfo)하여 토큰의 유효성을 검증한다.
+     */
+    suspend fun checkAutoLogin(): Boolean {
+        val token = userDataStore.tokenFlow.first()
+
+        if (token.isNullOrBlank()) {
+            return false // 토큰이 없으므로 수동 로그인 필요
+        }
+
+        val result = fetchMyInfo()
+        return result.isSuccess
     }
 
     // 로그아웃

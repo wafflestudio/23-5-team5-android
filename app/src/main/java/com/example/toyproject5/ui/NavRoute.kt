@@ -8,6 +8,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 
 sealed class NavRoute(val route: String, val title: String = "", val icon: ImageVector? = null) {
 
+    // 자동 로그인 기능 및 앱의 시작 화면 (Splash)
+    object Splash : NavRoute("splash")
+
     object Login : NavRoute("login", "로그인", Icons.Default.Home)
 
     object Signup : NavRoute("signup", "회원가입", Icons.Default.List)
