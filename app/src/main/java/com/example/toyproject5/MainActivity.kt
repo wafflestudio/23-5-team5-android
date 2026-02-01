@@ -49,7 +49,7 @@ class MainActivity : ComponentActivity() {
                             onSignupClick = { rootNavController.navigate(NavRoute.Signup.route) },
                             // registerToken과 email을 가지고 구글 전용 가입 화면으로 이동
                             onNavigateToSignup = { registerToken, email ->
-                                rootNavController.navigate("${NavRoute.GoogleSignup.route}?token=$registerToken&email=$email")
+                                rootNavController.navigate(NavRoute.GoogleSignup.createRoute(registerToken, email))
                             }
                         )
                     }

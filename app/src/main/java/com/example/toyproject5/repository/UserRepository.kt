@@ -81,9 +81,8 @@ class UserRepository @Inject constructor(
 
                 if (body.type == "REGISTER") {
                     // 케이스 A: 추가 회원가입이 필요한 상태
-                    // 이메일과 임시 토큰을 저장하고 회원가입 화면으로 보내야 합니다.
+                    // 이메일만 저장하고 회원가입 화면으로 보내야 합니다.
                     userDataStore.saveEmail(email)
-                    userDataStore.saveToken(body.token) // 임시 토큰 저장
                     Result.success(body)
                 } else {
                     // 케이스 B: 이미 가입된 유저 (로그인 성공)

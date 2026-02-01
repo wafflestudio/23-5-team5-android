@@ -64,7 +64,7 @@ fun LoginScreen(
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(clientId)
             .requestEmail()
-            .setHostedDomain("snu.ac.kr") // 구글 로그인 설정 단계에서 snu 도메인이 잘 보이도록 유도
+            //.setHostedDomain("snu.ac.kr") // 구글 로그인 설정 단계에서 snu 도메인이 잘 보이도록 유도
             .build()
         GoogleSignIn.getClient(context, gso)
     }
@@ -101,7 +101,7 @@ fun LoginScreen(
             // 저장해둔 토큰과 이메일을 가지고 이동!
             onNavigateToSignup(uiState.registerToken!!, uiState.email!!)
 
-            // 💡 이동 후에는 상태를 초기화해주는 게 좋아요 (뒤로가기 시 중복 방지)
+            // 이동 후에는 상태를 초기화 (뒤로가기 시 중복 방지)
             viewModel.resetRegisterState()
         }
     }
@@ -112,7 +112,7 @@ fun LoginScreen(
             // 서버에서 온 "서울대 이메일(@snu.ac.kr)만 가입 가능합니다." 메시지가 뜹니다.
             snackbarHostState.showSnackbar(msg)
 
-            // 중요: 서버에서 거절당했으므로 구글 세션을 끊어줘야
+            // 서버에서 거절당했으므로 구글 세션을 끊어줘야
             // 다음에 버튼을 눌렀을 때 계정 선택창이 다시 뜹니다.
             googleSignInClient.signOut()
 
