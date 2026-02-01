@@ -17,15 +17,26 @@ class UserRepository @Inject constructor(
     private val authApiService: AuthApiService,
     private val userApiService: UserApiService
 ) {
-    // 닉네임
-    // 1. 읽기: DataStore에서 흘러나오는 흐름을 그대로 노출
+    // 개인정보
+    // 읽기: DataStore에서 흘러나오는 흐름을 그대로 노출
     val nickname: Flow<String> = userDataStore.nicknameFlow
     val email: Flow<String> = userDataStore.emailFlow
+    val major: Flow<String?> = userDataStore.majorFlow
+    val bio: Flow<String?> = userDataStore.bioFlow
 
-    // 2. 쓰기: 사용자가 닉네임을 변경했을 때 호출
+    // 쓰기: 사용자가 닉네임을 변경했을 때 호출
     suspend fun updateNickname(newName: String): Result<UserMeResponse> {
-        // 나중에 여기에 서버 통신 코드(apiService.updateNickname)가 추가될 예정
         return updateProfileInfo(nickname = newName)
+    }
+
+    // 전공 변경
+    suspend fun updateMajor(newMajor: String): Result<UserMeResponse> {
+        return updateProfileInfo(major = newMajor)
+    }
+
+    // 자기소개 변경
+    suspend fun updateBio(newBio: String): Result<UserMeResponse> {
+        return updateProfileInfo(bio = newBio)
     }
 
     // 정보 불러오기
@@ -38,7 +49,8 @@ class UserRepository @Inject constructor(
                 if (body != null) {
                     userDataStore.saveNickname(body.nickname)
                     body.profileImageUrl?.let { userDataStore.saveProfileImage(it) }
-                    // TODO: role, bio 등 추가 저장 가능
+                    body.major?.let { userDataStore.saveMajor(it) }
+                    body.bio?.let { userDataStore.saveBio(it) }
 
                     Result.success(body)
                 } else {
@@ -81,7 +93,9 @@ class UserRepository @Inject constructor(
                 val updatedData = response.body()!!
 
                 // TODO: 현재 예시에서는 닉네임만 저장하고 있지만, major 등도 저장
-                userDataStore.saveNickname(updatedData.nickname)
+                updatedData.major?.let { userDataStore.saveMajor(it) }
+                updatedData.bio?.let { userDataStore.saveBio(it) }
+                updatedData.profileImageUrl?.let { userDataStore.saveProfileImage(it) }
 
                 Result.success(updatedData)
             } else {

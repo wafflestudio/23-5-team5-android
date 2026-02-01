@@ -32,18 +32,24 @@ class MyPageViewModel @Inject constructor(
     // [임시 저장소] 낙관적 업데이트 기조
     private val _tempNickname = MutableStateFlow<String?>(null)
     private val _tempImageUri = MutableStateFlow<String?>(null)
+    private val _tempMajor = MutableStateFlow<String?>(null)
+    private val _tempBio = MutableStateFlow<String?>(null)
 
     // 에러 상태 관리 (롤백 시 사용자에게 알리기 위함)
     private val _errorMessage = MutableStateFlow<String?>(null)
 
     val uiState: StateFlow<MyPageState> = combine(
         listOf(
-            userRepository.nickname,      // index 0
-            userRepository.email,         // index 1
-            userRepository.profileImageUri, // index 2
-            _tempImageUri,                // index 3
-            _tempNickname,                // index 4
-            _errorMessage                 // index 5
+            userRepository.nickname,       // 0
+            userRepository.email,          // 1
+            userRepository.profileImageUri, // 2
+            userRepository.major,          // 3 (Repository에도 필드가 있다고 가정)
+            userRepository.bio,            // 4 (Repository에도 필드가 있다고 가정)
+            _tempNickname,                 // 5
+            _tempImageUri,                 // 6
+            _tempMajor,                    // 7
+            _tempBio,                      // 8
+            _errorMessage                  // 9
         )
     ) { array: Array<Any?> -> // 중요: 파라미터를 6개가 아닌 'array' 하나로 받습니다.
 
@@ -51,14 +57,21 @@ class MyPageViewModel @Inject constructor(
         val nickname = array[0] as String
         val email = array[1] as String
         val savedUri = array[2] as String?
-        val tempUri = array[3] as String?
-        val tempNick = array[4] as String?
-        val error = array[5] as String?
+        val savedMajor = array[3] as String?
+        val savedBio = array[4] as String?
+
+        val tempNick = array[5] as String?
+        val tempUri = array[6] as String?
+        val tempMajor = array[7] as String?
+        val tempBio = array[8] as String?
+        val error = array[9] as String?
 
         MyPageState(
             nickname = tempNick ?: nickname,
             email = email,
             profileImageUrl = tempUri ?: savedUri,
+            major = tempMajor ?: savedMajor ?: "전공을 입력해주세요",
+            bio = tempBio ?: savedBio ?: "자기소개를 입력해주세요",
             errorMessage = error
         )
     }.stateIn(
@@ -122,6 +135,53 @@ class MyPageViewModel @Inject constructor(
                 _errorMessage.value = "네트워크 오류가 발생했습니다."
             } finally {
                 _tempNickname.value = null
+            }
+        }
+    }
+
+    // 전공 변경
+    fun updateMajor(newMajor: String) {
+        if (newMajor.isBlank()) return
+
+        // [선조치] 서버 응답을 기다리지 않고 UI 변경
+        _tempMajor.value = newMajor
+        _errorMessage.value = null
+
+        viewModelScope.launch {
+            try {
+                val result = userRepository.updateMajor(newMajor)
+                result.onFailure {
+                    _tempMajor.value = null // 실패 시 롤백
+                    _errorMessage.value = "전공 수정에 실패했습니다."
+                }
+            } catch (e: Exception) {
+                _tempMajor.value = null
+                _errorMessage.value = "네트워크 오류가 발생했습니다."
+            } finally {
+                _tempMajor.value = null // 성공/실패 여부와 상관없이 임시는 비움 (원본 데이터가 Flow로 올 것이므로)
+            }
+        }
+    }
+
+    // 자기소개 변경
+    fun updateBio(newBio: String) {
+
+        // [선조치] 서버 응답을 기다리지 않고 UI 변경
+        _tempBio.value = newBio
+        _errorMessage.value = null
+
+        viewModelScope.launch {
+            try {
+                val result = userRepository.updateBio(newBio)
+                result.onFailure {
+                    _tempBio.value = null
+                    _errorMessage.value = "자기소개 수정에 실패했습니다."
+                }
+            } catch (e: Exception) {
+                _tempBio.value = null
+                _errorMessage.value = "네트워크 오류가 발생했습니다."
+            } finally {
+                _tempBio.value = null
             }
         }
     }

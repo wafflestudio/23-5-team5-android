@@ -134,7 +134,7 @@ fun MyPageScreen(pingViewModel: PingViewModel = hiltViewModel(),
             currentMajor = uiState.major ?: "",
             onDismiss = { showMajorDialog = false },
             onConfirm = { newMajor ->
-                // TODO: myPageViewModel.updateMajor(newMajor) 기능 구현 필요
+                myPageViewModel.updateMajor(newMajor)
                 showMajorDialog = false
             }
         )
@@ -145,7 +145,7 @@ fun MyPageScreen(pingViewModel: PingViewModel = hiltViewModel(),
             currentBio = uiState.bio ?: "",
             onDismiss = { showBioDialog = false },
             onConfirm = { newBio ->
-                // TODO: myPageViewModel.updateBio(newBio) 기능 구현 필요
+                myPageViewModel.updateBio(newBio)
                 showBioDialog = false
             }
         )
