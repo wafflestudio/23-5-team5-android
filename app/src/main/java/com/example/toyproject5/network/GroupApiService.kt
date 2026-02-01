@@ -44,9 +44,16 @@ interface GroupApiService {
     @GET("api/groups/search")
     suspend fun searchGroups(
         @Query("categoryId") categoryId: Int? = null,
-        @Query("keyword") keyword: String? = null
+        @Query("keyword") keyword: String? = null,
+        @Query("page") page: Int? = null,
+        @Query("size") size: Int? = null,
+        @Query("sort") sort: String? = null
     ): Response<GroupSearchResponse>
 
     @GET("api/groups/search/me")
-    suspend fun searchMyGroups(): Response<GroupSearchResponse>
+    suspend fun searchMyGroups(
+        @Query("page") page: Int? = null,
+        @Query("size") size: Int? = null,
+        @Query("sort") sort: String? = null
+    ): Response<GroupSearchResponse>
 }

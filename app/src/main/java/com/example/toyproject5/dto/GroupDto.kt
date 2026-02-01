@@ -50,5 +50,10 @@ data class GroupResponse(
  * Wrapper for paginated group search results
  */
 data class GroupSearchResponse(
-    @SerializedName("content") val content: List<GroupResponse>
+    @SerializedName("content") val content: List<GroupResponse>,
+    @SerializedName("totalPages") val totalPages: Int,
+    @SerializedName("totalElements") val totalElements: Int,
+    @SerializedName("last") val last: Boolean,
+    @SerializedName("number") val number: Int,
+    @SerializedName("size") val size: Int
 )

@@ -4,8 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -37,15 +39,36 @@ fun RecruitmentScreen(
     
     val groups by viewModel.groups.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val isMoreLoading by viewModel.isMoreLoading.collectAsState()
     val error by viewModel.error.collectAsState()
 
+    val listState = rememberLazyListState()
+
     // Fetch groups on initial load and when search/category changes
-    // API Specification: GET /api/groups/search?categoryId=X&keyword=Y
     LaunchedEffect(searchQuery, selectedCategoryId) {
         viewModel.searchGroups(
             categoryId = selectedCategoryId, 
-            keyword = searchQuery.ifBlank { null }
+            keyword = searchQuery.ifBlank { null },
+            isRefresh = true
         )
+    }
+
+    // Load more items when scrolled to bottom
+    val shouldLoadMore = remember {
+        derivedStateOf {
+            val lastVisibleItemIndex = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            lastVisibleItemIndex >= groups.size - 2 && groups.isNotEmpty() && !isLoading && !isMoreLoading
+        }
+    }
+
+    LaunchedEffect(shouldLoadMore.value) {
+        if (shouldLoadMore.value) {
+            viewModel.searchGroups(
+                categoryId = selectedCategoryId,
+                keyword = searchQuery.ifBlank { null },
+                isRefresh = false
+            )
+        }
     }
 
     val categories = listOf(
@@ -128,7 +151,7 @@ fun RecruitmentScreen(
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
-        } else if (error != null) {
+        } else if (error != null && groups.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(text = error ?: "알 수 없는 오류가 발생했습니다.", color = Color.Red)
@@ -145,12 +168,26 @@ fun RecruitmentScreen(
                 }
             } else {
                 LazyColumn(
+                    state = listState,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(groups) { group ->
                         GroupCardItem(group = group, onClick = { onPostClick(group) })
+                    }
+                    
+                    if (isMoreLoading) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                            }
+                        }
                     }
                 }
             }

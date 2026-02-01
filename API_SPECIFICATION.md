@@ -5,7 +5,7 @@
 - **Base URL**: `http://43.203.97.212:8080`
 - **Version**: 1.0
 - **Content-Type**: `application/json` (except for file upload endpoints)
-- **Date**: 2026-01-25
+- **Date**: 2026-02-01
 
 ---
 
@@ -205,17 +205,23 @@ Update only the profile image.
 
 ```json
 {
-  "userId": 1,
-  "username": "string",
-  "major": "string",
-  "studentNumber": "string",
-  "nickname": "string",
   "profileImageUrl": "https://...",
-  "bio": "string",
-  "role": "USER",
   "createdAt": "2026-01-25T10:30:00Z"
 }
 ```
+
+---
+
+### 6. Get Profile Image
+
+Get a redirect to the profile image URL.
+
+- **Endpoint**: `GET /api/users/me/profile-image`
+- **Authentication**: Required (JWT)
+
+#### Response: `302 Found`
+
+Redirects to the profile image URL, or returns `404 Not Found` if no profile image exists.
 
 ---
 
@@ -265,6 +271,53 @@ Authenticate using Google OAuth.
 
 ---
 
+### Social Sign Up (Additional Information)
+
+Complete social sign-up by providing additional user information.
+
+- **Endpoint**: `POST /api/oauth/signUp/{provider}`
+- **Authentication**: Not required (but requires registerToken)
+- **Content-Type**: `application/json`
+
+#### Path Parameters
+
+| Parameter | Type   | Description                                            |
+| --------- | ------ | ------------------------------------------------------ |
+| provider  | string | OAuth provider (currently supports: `google`, `kakao`) |
+
+#### Request Body
+
+```json
+{
+  "registerToken": "string",
+  "email": "myid@snu.ac.kr",
+  "major": "string",
+  "student_number": "string",
+  "nickname": "string"
+}
+```
+
+| Field          | Type   | Required | Description                                               |
+| -------------- | ------ | -------- | --------------------------------------------------------- |
+| registerToken  | string | Yes      | Registration token from OAuth login response              |
+| email          | string | No       | SNU email (null if social account already uses SNU email) |
+| major          | string | Yes      | User's major/department                                   |
+| student_number | string | Yes      | Student identification number                             |
+| nickname       | string | Yes      | User's nickname                                           |
+
+#### Response: `200 OK`
+
+```json
+{
+  "accessToken": "string",
+  "username": "string",
+  "nickname": "string",
+  "isVerified": true
+}
+```
+
+---
+
 ## Email Verification
 
 ### 1. Send Verification Code
@@ -295,11 +348,43 @@ Send a verification code to the user's email.
 
 ---
 
-### 2. Verify Email Code
+### 2. Verify Email Code (Regular Signup)
 
-Verify the email with the code sent.
+Verify the email with the code sent for regular (non-social) signup.
 
 - **Endpoint**: `POST /api/auth/verify`
+- **Authentication**: Not required
+- **Content-Type**: `application/json`
+
+#### Request Body
+
+```json
+{
+  "email": "user@snu.ac.kr",
+  "code": "123456"
+}
+```
+
+| Field | Type   | Required | Description                  |
+| ----- | ------ | -------- | ---------------------------- |
+| email | string | Yes      | Email address being verified |
+| code  | string | Yes      | Verification code from email |
+
+#### Response: `200 OK`
+
+```json
+{
+  "message": "인증에 성공하였습니다."
+}
+```
+
+---
+
+### 3. Social Verify (OAuth Email Verification)
+
+Verify email for social login users who don't have SNU email.
+
+- **Endpoint**: `POST /api/auth/social/verify`
 - **Authentication**: Not required (but requires register_token)
 - **Content-Type**: `application/json`
 
@@ -308,7 +393,7 @@ Verify the email with the code sent.
 ```json
 {
   "register_token": "string",
-  "email": "user@example.com",
+  "email": "user@snu.ac.kr",
   "code": "123456"
 }
 ```
@@ -316,17 +401,24 @@ Verify the email with the code sent.
 | Field          | Type   | Required | Description                                  |
 | -------------- | ------ | -------- | -------------------------------------------- |
 | register_token | string | Yes      | Registration token from OAuth login response |
-| email          | string | Yes      | Email address being verified                 |
+| email          | string | Yes      | SNU email address being verified             |
 | code           | string | Yes      | Verification code from email                 |
 
 #### Response: `200 OK`
 
 ```json
 {
-  "type": "LOGIN",
+  "type": "REGISTER",
   "token": "string"
 }
 ```
+
+| Field | Description                                                     |
+| ----- | --------------------------------------------------------------- |
+| type  | Either `"LOGIN"` (existing user) or `"REGISTER"` (new user)     |
+| token | AccessToken (if type=LOGIN) or RegisterToken (if type=REGISTER) |
+
+**Note**: If `type` is `"REGISTER"`, proceed to `/oauth/signUp/{provider}` with additional information.
 
 ---
 
@@ -533,30 +625,65 @@ GET /groups/search?categoryId=1&keyword=algorithm
 
 ### 2. Search My Groups
 
-Get all groups the authenticated user has joined or created.
+Get all groups the authenticated user has joined or created with pagination support.
 
 - **Endpoint**: `GET /api/groups/search/me`
 - **Authentication**: Required (JWT)
 - **Content-Type**: `application/json`
 
+#### Query Parameters
+
+| Parameter | Type   | Required | Description                         |
+| --------- | ------ | -------- | ----------------------------------- |
+| page      | number | No       | Page number (0-indexed, default: 0) |
+| size      | number | No       | Page size (default: 10)             |
+| sort      | string | No       | Sort field (default: createdAt)     |
+
 #### Response: `200 OK`
 
 ```json
-[
-  {
-    "id": 1,
-    "groupName": "Algorithm Study",
-    "description": "Weekly algorithm problem solving",
-    "categoryId": 1,
-    "subCategoryId": 2,
-    "capacity": 10,
-    "leaderId": 5,
-    "isOnline": true,
-    "location": "Zoom",
-    "status": "RECRUITING",
-    "createdAt": "2026-01-25T10:30:00Z"
-  }
-]
+{
+  "content": [
+    {
+      "id": 1,
+      "groupName": "Algorithm Study",
+      "description": "Weekly algorithm problem solving",
+      "categoryId": 1,
+      "subCategoryId": 2,
+      "capacity": 10,
+      "leaderId": 5,
+      "isOnline": true,
+      "location": "Zoom",
+      "status": "RECRUITING",
+      "createdAt": "2026-01-25T10:30:00Z"
+    }
+  ],
+  "pageable": {
+    "sort": {
+      "sorted": true,
+      "unsorted": false,
+      "empty": false
+    },
+    "pageNumber": 0,
+    "pageSize": 10,
+    "offset": 0,
+    "paged": true,
+    "unpaged": false
+  },
+  "totalPages": 2,
+  "totalElements": 15,
+  "last": false,
+  "first": true,
+  "size": 10,
+  "number": 0,
+  "sort": {
+    "sorted": true,
+    "unsorted": false,
+    "empty": false
+  },
+  "numberOfElements": 10,
+  "empty": false
+}
 ```
 
 ---
@@ -620,27 +747,43 @@ All errors follow a consistent format:
 4. **Date Format**: Timestamps are in ISO 8601 format (UTC timezone). Parse using `Instant` or similar date parsing libraries.
 
 5. **OAuth Flow**:
-    - Get Google ID token from Google Sign-In SDK
-    - Send token to `/oauth/login/google`
-    - If response type is `"REGISTER"`, proceed with email verification
-    - If response type is `"LOGIN"`, use token as access token
+    - Get Google/Kakao ID token from respective SDK
+    - Send token to `/oauth/login/{provider}` (google or kakao)
+    - If response type is `"LOGIN"`, use token as access token (login complete)
+    - If response type is `"REGISTER"`, check the email in the token:
+        - If SNU email: Set `email` field to `null` in signup request
+        - If non-SNU email: Proceed with email verification flow
 
 6. **Email Verification Flow**:
-    - After OAuth registration, get `register_token`
-    - Send verification code request to `/auth/code`
-    - User receives code via email (valid for 3 minutes)
-    - Submit code with token to `/auth/verify`
-    - Receive access token upon successful verification
+    - **For Regular Signup**: Send email to `/auth/code`, verify with `/auth/verify` (returns success message)
+    - **For OAuth with non-SNU email**:
+        - Get `register_token` from OAuth login response
+        - Send verification code request to `/auth/code`
+        - User receives code via email (valid for 3 minutes)
+        - Submit code with token to `/auth/social/verify`
+        - If response type is `"REGISTER"`, proceed to signup with additional info
 
-7. **Group Operations**:
+7. **OAuth Signup Completion**:
+    - After verification (or if email is SNU email), call `/oauth/signUp/{provider}`
+    - Provide `registerToken`, `email` (null if SNU), `major`, `student_number`, `nickname`
+    - Receive access token and complete registration
+
+8. **Pagination**:
+    - Search endpoints now return paginated results using Spring Data's `Page` object
+    - Use `page` (0-indexed), `size`, and `sort` parameters to control pagination
+    - Access results via the `content` array in the response
+    - Check `totalPages`, `totalElements`, `first`, `last` for pagination state
+
+9. **Group Operations**:
     - Group leader ID can be used to determine if current user is the leader
     - Only leaders can delete or expire groups
     - Check `capacity` field: `null` means unlimited capacity
 
-8. **Search Optimization**:
-    - Both `categoryId` and `keyword` are optional in search
+10. **Search Optimization**:
+    - `categoryId`, `subCategoryId`, and `keyword` are all optional in search
     - You can use them together or separately
-    - Empty query returns all groups
+    - Empty query returns all groups (paginated)
+    - Default page size is 10 items, sorted by `createdAt`
 
 ---
 
@@ -650,22 +793,22 @@ All errors follow a consistent format:
 
 ```kotlin
 interface StudyGroupApi {
-    @POST("auth/login")
+    @POST("api/auth/login")
     suspend fun login(@Body request: LoginDto): LoginResponseDto
 
-    @GET("groups/search")
+    @GET("api/groups/search")
     suspend fun searchGroups(
         @Query("categoryId") categoryId: Long?,
         @Query("keyword") keyword: String?
     ): List<GroupResponse>
 
-    @GET("users/me")
+    @GET("api/users/me")
     suspend fun getProfile(
         @Header("Authorization") token: String
     ): GetProfileDto
 
     @Multipart
-    @PATCH("users/me")
+    @PATCH("api/users/me")
     suspend fun updateProfile(
         @Header("Authorization") token: String,
         @Part("major") major: String?,

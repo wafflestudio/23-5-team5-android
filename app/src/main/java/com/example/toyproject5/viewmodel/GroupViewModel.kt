@@ -29,8 +29,15 @@ class GroupViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private val _isMoreLoading = MutableStateFlow(false)
+    val isMoreLoading: StateFlow<Boolean> = _isMoreLoading.asStateFlow()
+
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
+
+    private var currentPage = 0
+    private var isLastPage = false
+    private val pageSize = 10
 
     fun selectGroup(group: GroupResponse) {
         _selectedGroup.value = group
@@ -62,20 +69,39 @@ class GroupViewModel @Inject constructor(
         }
     }
 
-    fun searchGroups(categoryId: Int? = null, keyword: String? = null) {
+    fun searchGroups(categoryId: Int? = null, keyword: String? = null, isRefresh: Boolean = true) {
+        if (isRefresh) {
+            currentPage = 0
+            isLastPage = false
+        } else if (isLastPage || _isMoreLoading.value) {
+            return
+        }
+
         viewModelScope.launch {
-            _isLoading.value = true
+            if (isRefresh) _isLoading.value = true else _isMoreLoading.value = true
             try {
-                val response = repository.searchGroups(categoryId, keyword)
+                val response = repository.searchGroups(categoryId, keyword, page = currentPage, size = pageSize)
                 if (response.isSuccessful) {
-                    _groups.value = response.body()?.content ?: emptyList()
+                    val searchResponse = response.body()
+                    val newGroups = searchResponse?.content ?: emptyList()
+                    
+                    if (isRefresh) {
+                        _groups.value = newGroups
+                    } else {
+                        _groups.value = _groups.value + newGroups
+                    }
+                    
+                    isLastPage = searchResponse?.last ?: true
+                    if (!isLastPage) {
+                        currentPage++
+                    }
                 } else {
                     _error.value = "Search failed: ${response.message()}"
                 }
             } catch (e: Exception) {
                 _error.value = e.localizedMessage
             } finally {
-                _isLoading.value = false
+                if (isRefresh) _isLoading.value = false else _isMoreLoading.value = false
             }
         }
     }
