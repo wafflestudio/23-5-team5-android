@@ -13,7 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -249,8 +249,11 @@ fun GroupCardItem(group: GroupResponse, onClick: () -> Unit) {
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                PostInfoRow(icon = Icons.Default.Star, text = "정원: ${group.capacity ?: "무제한"}")
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                PostInfoRow(icon = Icons.Default.Person, text = "정원: ${group.capacity ?: "무제한"}")
                 PostInfoRow(icon = Icons.Default.LocationOn, text = group.location ?: "")
             }
         }
