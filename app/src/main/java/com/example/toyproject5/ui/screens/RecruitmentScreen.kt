@@ -4,14 +4,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -37,15 +39,37 @@ fun RecruitmentScreen(
     
     val groups by viewModel.groups.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val isMoreLoading by viewModel.isMoreLoading.collectAsState()
     val error by viewModel.error.collectAsState()
 
+    val listState = rememberLazyListState()
+
     // Fetch groups on initial load and when search/category changes
-    // API Specification: GET /api/groups/search?categoryId=X&keyword=Y
     LaunchedEffect(searchQuery, selectedCategoryId) {
         viewModel.searchGroups(
             categoryId = selectedCategoryId, 
-            keyword = searchQuery.ifBlank { null }
+            keyword = searchQuery.ifBlank { null },
+            isRefresh = true
         )
+    }
+
+    // Load more items when scrolled to bottom
+    val shouldLoadMore = remember {
+        derivedStateOf {
+            val lastVisibleItemIndex = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            // Load more when we are near the end of the list
+            lastVisibleItemIndex >= groups.size - 3 && groups.isNotEmpty() && !isLoading && !isMoreLoading
+        }
+    }
+
+    LaunchedEffect(shouldLoadMore.value) {
+        if (shouldLoadMore.value) {
+            viewModel.searchGroups(
+                categoryId = selectedCategoryId,
+                keyword = searchQuery.ifBlank { null },
+                isRefresh = false
+            )
+        }
     }
 
     val categories = listOf(
@@ -105,7 +129,7 @@ fun RecruitmentScreen(
             contentPadding = PaddingValues(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(categories) { category ->
+            items(categories, key = { it.name }) { category ->
                 val isSelected = selectedCategoryId == category.id
                 Surface(
                     onClick = { selectedCategoryId = category.id },
@@ -124,11 +148,11 @@ fun RecruitmentScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (isLoading) {
+        if (isLoading && groups.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
-        } else if (error != null) {
+        } else if (error != null && groups.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(text = error ?: "알 수 없는 오류가 발생했습니다.", color = Color.Red)
@@ -139,18 +163,32 @@ fun RecruitmentScreen(
             }
         } else {
             // Post List
-            if (groups.isEmpty()) {
+            if (groups.isEmpty() && !isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(text = "검색 결과가 없습니다.", color = Color.Gray)
                 }
             } else {
                 LazyColumn(
+                    state = listState,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(groups) { group ->
+                    items(groups, key = { it.id }) { group ->
                         GroupCardItem(group = group, onClick = { onPostClick(group) })
+                    }
+                    
+                    if (isMoreLoading || (isLoading && groups.isNotEmpty())) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                            }
+                        }
                     }
                 }
             }
@@ -212,8 +250,11 @@ fun GroupCardItem(group: GroupResponse, onClick: () -> Unit) {
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                PostInfoRow(icon = Icons.Default.Star, text = "정원: ${group.capacity ?: "무제한"}")
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                PostInfoRow(icon = Icons.Default.Person, text = "정원: ${group.capacity ?: "무제한"}")
                 PostInfoRow(icon = Icons.Default.LocationOn, text = group.location ?: "")
             }
         }

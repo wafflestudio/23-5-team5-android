@@ -6,6 +6,7 @@ import com.example.toyproject5.dto.GroupCreateRequest
 import com.example.toyproject5.dto.GroupResponse
 import com.example.toyproject5.repository.GroupRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,8 +30,16 @@ class GroupViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private val _isMoreLoading = MutableStateFlow(false)
+    val isMoreLoading: StateFlow<Boolean> = _isMoreLoading.asStateFlow()
+
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
+
+    private var currentPage = 0
+    private var isLastPage = false
+    private val pageSize = 10
+    private var searchJob: Job? = null
 
     fun selectGroup(group: GroupResponse) {
         _selectedGroup.value = group
@@ -62,20 +71,54 @@ class GroupViewModel @Inject constructor(
         }
     }
 
-    fun searchGroups(categoryId: Int? = null, keyword: String? = null) {
-        viewModelScope.launch {
+    fun searchGroups(categoryId: Int? = null, keyword: String? = null, isRefresh: Boolean = true) {
+        if (isRefresh) {
+            searchJob?.cancel()
+            currentPage = 0
+            isLastPage = false
             _isLoading.value = true
+        } else {
+            if (isLastPage || _isMoreLoading.value || _isLoading.value) {
+                return
+            }
+            _isMoreLoading.value = true
+        }
+
+        searchJob = viewModelScope.launch {
             try {
-                val response = repository.searchGroups(categoryId, keyword)
+                val response = repository.searchGroups(categoryId, keyword, page = currentPage, size = pageSize)
                 if (response.isSuccessful) {
-                    _groups.value = response.body()?.content ?: emptyList()
+                    val searchResponse = response.body()
+                    val newGroups = searchResponse?.content ?: emptyList()
+                    
+                    if (isRefresh) {
+                        _groups.value = newGroups
+                    } else {
+                        // Prevent duplicates by checking IDs
+                        val currentList = _groups.value
+                        val filteredNewGroups = newGroups.filter { newItem ->
+                            currentList.none { it.id == newItem.id }
+                        }
+                        _groups.value = currentList + filteredNewGroups
+                    }
+                    
+                    isLastPage = searchResponse?.last ?: true
+                    if (!isLastPage) {
+                        currentPage++
+                    }
                 } else {
                     _error.value = "Search failed: ${response.message()}"
                 }
             } catch (e: Exception) {
-                _error.value = e.localizedMessage
+                if (e !is kotlinx.coroutines.CancellationException) {
+                    _error.value = e.localizedMessage
+                }
             } finally {
-                _isLoading.value = false
+                if (isRefresh) {
+                    _isLoading.value = false
+                } else {
+                    _isMoreLoading.value = false
+                }
             }
         }
     }
