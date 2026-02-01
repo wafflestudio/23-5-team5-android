@@ -6,6 +6,8 @@ import com.example.toyproject5.data.local.UserPreferences
 import com.example.toyproject5.dto.SocialLoginRequest
 import com.example.toyproject5.dto.LoginRequest
 import com.example.toyproject5.dto.SocialLoginResponse
+import com.example.toyproject5.dto.SocialSignupRequest
+import com.example.toyproject5.dto.SocialSignupResponse
 import com.example.toyproject5.dto.UserResponse
 import com.example.toyproject5.network.AuthApiService
 import com.example.toyproject5.network.UserApiService
@@ -66,7 +68,7 @@ class UserRepository @Inject constructor(
     }
 
     /**
-     * [구글 로그인/회원가입 처리]
+     * [구글 로그인 처리]
      * @param idToken: 구글에서 받은 id_token
      * @param email: 로컬에 저장할 구글 이메일
      */
@@ -92,6 +94,32 @@ class UserRepository @Inject constructor(
                 }
             } else {
                 Result.failure(Exception("인증 실패: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * [구글 회원가입 처리]
+     * @param request: 서버가 요구하는 추가 정보 (임시 토큰, 학과, 학번, 닉네임 등)
+     * @return Result<SocialSignupResponse>: 최종 가입 및 로그인 성공 결과
+     */
+    suspend fun googleSignup(request: SocialSignupRequest): Result<SocialSignupResponse> {
+        return try {
+            // 소셜 회원가입 API 호출
+            val response = authApiService.googleSignup(provider = "google", request = request)
+
+            if (response.isSuccessful && response.body() != null) {
+                val body = response.body()!!
+
+                // 가입 성공 시 최종 액세스 토큰과 닉네임 저장
+                userDataStore.saveToken(body.accessToken)
+                userDataStore.saveNickname(body.nickname)
+
+                Result.success(body)
+            } else {
+                Result.failure(Exception("회원가입 실패 (에러 코드: ${response.code()})"))
             }
         } catch (e: Exception) {
             Result.failure(e)

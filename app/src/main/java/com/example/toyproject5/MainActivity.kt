@@ -9,6 +9,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -18,6 +20,7 @@ import com.example.toyproject5.ui.screens.auth.LoginScreen
 import com.example.toyproject5.ui.screens.auth.SignupScreen
 import com.example.toyproject5.viewmodel.AuthViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import com.example.toyproject5.ui.screens.auth.GoogleSignupScreen
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -44,9 +47,9 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
                             onSignupClick = { rootNavController.navigate(NavRoute.Signup.route) },
+                            // registerToken과 email을 가지고 구글 전용 가입 화면으로 이동
                             onNavigateToSignup = { registerToken, email ->
-                                // Route 이름 뒤에 쿼리나 파라미터를 붙여서 전달하도록 설정 (예시)
-                                rootNavController.navigate("${NavRoute.Signup.route}?token=$registerToken&email=$email")
+                                rootNavController.navigate("${NavRoute.GoogleSignup.route}?token=$registerToken&email=$email")
                             }
                         )
                     }
@@ -58,7 +61,29 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // 메인 화면 (기존에 작성하신 MainScreen)
+                    //구글 회원가입 화면
+                    composable(
+                        route = NavRoute.GoogleSignup.route,
+                        arguments = listOf(
+                            navArgument("token") { type = NavType.StringType },
+                            navArgument("email") { type = NavType.StringType }
+                        )
+                    ) { backStackEntry ->
+                        val token = backStackEntry.arguments?.getString("token") ?: ""
+                        val email = backStackEntry.arguments?.getString("email") ?: ""
+
+                        GoogleSignupScreen(
+                            registerToken = token,
+                            email = email,
+                            onSignupSuccess = {
+                                rootNavController.navigate(NavRoute.Main.route) {
+                                    popUpTo(NavRoute.Login.route) { inclusive = true }
+                                }
+                            }
+                        )
+                    }
+
+                    // 메인 화면
                     composable(NavRoute.Main.route) {
                         MainScreen()
                     }
