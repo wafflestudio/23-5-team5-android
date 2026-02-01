@@ -6,6 +6,7 @@ import com.example.toyproject5.dto.GroupCreateRequest
 import com.example.toyproject5.dto.GroupResponse
 import com.example.toyproject5.repository.GroupRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,6 +39,7 @@ class GroupViewModel @Inject constructor(
     private var currentPage = 0
     private var isLastPage = false
     private val pageSize = 10
+    private var searchJob: Job? = null
 
     fun selectGroup(group: GroupResponse) {
         _selectedGroup.value = group
@@ -71,14 +73,18 @@ class GroupViewModel @Inject constructor(
 
     fun searchGroups(categoryId: Int? = null, keyword: String? = null, isRefresh: Boolean = true) {
         if (isRefresh) {
+            searchJob?.cancel()
             currentPage = 0
             isLastPage = false
-        } else if (isLastPage || _isMoreLoading.value) {
-            return
+            _isLoading.value = true
+        } else {
+            if (isLastPage || _isMoreLoading.value || _isLoading.value) {
+                return
+            }
+            _isMoreLoading.value = true
         }
 
-        viewModelScope.launch {
-            if (isRefresh) _isLoading.value = true else _isMoreLoading.value = true
+        searchJob = viewModelScope.launch {
             try {
                 val response = repository.searchGroups(categoryId, keyword, page = currentPage, size = pageSize)
                 if (response.isSuccessful) {
@@ -88,7 +94,12 @@ class GroupViewModel @Inject constructor(
                     if (isRefresh) {
                         _groups.value = newGroups
                     } else {
-                        _groups.value = _groups.value + newGroups
+                        // Prevent duplicates by checking IDs
+                        val currentList = _groups.value
+                        val filteredNewGroups = newGroups.filter { newItem ->
+                            currentList.none { it.id == newItem.id }
+                        }
+                        _groups.value = currentList + filteredNewGroups
                     }
                     
                     isLastPage = searchResponse?.last ?: true
@@ -99,9 +110,15 @@ class GroupViewModel @Inject constructor(
                     _error.value = "Search failed: ${response.message()}"
                 }
             } catch (e: Exception) {
-                _error.value = e.localizedMessage
+                if (e !is kotlinx.coroutines.CancellationException) {
+                    _error.value = e.localizedMessage
+                }
             } finally {
-                if (isRefresh) _isLoading.value = false else _isMoreLoading.value = false
+                if (isRefresh) {
+                    _isLoading.value = false
+                } else {
+                    _isMoreLoading.value = false
+                }
             }
         }
     }

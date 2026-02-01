@@ -57,7 +57,8 @@ fun RecruitmentScreen(
     val shouldLoadMore = remember {
         derivedStateOf {
             val lastVisibleItemIndex = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-            lastVisibleItemIndex >= groups.size - 2 && groups.isNotEmpty() && !isLoading && !isMoreLoading
+            // Load more when we are near the end of the list
+            lastVisibleItemIndex >= groups.size - 3 && groups.isNotEmpty() && !isLoading && !isMoreLoading
         }
     }
 
@@ -128,7 +129,7 @@ fun RecruitmentScreen(
             contentPadding = PaddingValues(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(categories) { category ->
+            items(categories, key = { it.name }) { category ->
                 val isSelected = selectedCategoryId == category.id
                 Surface(
                     onClick = { selectedCategoryId = category.id },
@@ -147,7 +148,7 @@ fun RecruitmentScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (isLoading) {
+        if (isLoading && groups.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
@@ -162,7 +163,7 @@ fun RecruitmentScreen(
             }
         } else {
             // Post List
-            if (groups.isEmpty()) {
+            if (groups.isEmpty() && !isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(text = "검색 결과가 없습니다.", color = Color.Gray)
                 }
@@ -173,11 +174,11 @@ fun RecruitmentScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(groups) { group ->
+                    items(groups, key = { it.id }) { group ->
                         GroupCardItem(group = group, onClick = { onPostClick(group) })
                     }
                     
-                    if (isMoreLoading) {
+                    if (isMoreLoading || (isLoading && groups.isNotEmpty())) {
                         item {
                             Box(
                                 modifier = Modifier
