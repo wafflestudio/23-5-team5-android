@@ -144,7 +144,7 @@ fun EmailInputStep(email: String, onEmailChange: (String) -> Unit, onNext: () ->
             isError = email.isNotEmpty() && !isSnuEmail // 입력 중인데 형식이 다르면 에러 표시
         )
 
-        // 에러 메시지 (선택 사항)
+        // 에러 메시지
         if (email.isNotEmpty() && !isSnuEmail) {
             Text(
                 text = "@snu.ac.kr 도메인만 사용 가능합니다.",

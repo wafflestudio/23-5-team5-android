@@ -43,7 +43,11 @@ class MainActivity : ComponentActivity() {
                                     popUpTo(NavRoute.Login.route) { inclusive = true }
                                 }
                             },
-                            onSignupClick = { rootNavController.navigate(NavRoute.Signup.route) }
+                            onSignupClick = { rootNavController.navigate(NavRoute.Signup.route) },
+                            onNavigateToSignup = { registerToken, email ->
+                                // Route 이름 뒤에 쿼리나 파라미터를 붙여서 전달하도록 설정 (예시)
+                                rootNavController.navigate("${NavRoute.Signup.route}?token=$registerToken&email=$email")
+                            }
                         )
                     }
 

@@ -3,9 +3,9 @@ package com.example.toyproject5.repository
 import androidx.datastore.dataStore
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.example.toyproject5.data.local.UserPreferences
-import com.example.toyproject5.dto.GoogleLoginRequest
+import com.example.toyproject5.dto.SocialLoginRequest
 import com.example.toyproject5.dto.LoginRequest
-import com.example.toyproject5.dto.OAuthLoginResponse
+import com.example.toyproject5.dto.SocialLoginResponse
 import com.example.toyproject5.dto.UserResponse
 import com.example.toyproject5.network.AuthApiService
 import com.example.toyproject5.network.UserApiService
@@ -70,9 +70,9 @@ class UserRepository @Inject constructor(
      * @param idToken: 구글에서 받은 id_token
      * @param email: 로컬에 저장할 구글 이메일
      */
-    suspend fun handleGoogleAuth(idToken: String, email: String): Result<OAuthLoginResponse> {
+    suspend fun handleGoogleAuth(idToken: String, email: String): Result<SocialLoginResponse> {
         return try {
-            val response = authApiService.googleLogin(googleLoginRequest = GoogleLoginRequest(idToken))
+            val response = authApiService.googleLogin(googleLoginRequest = SocialLoginRequest(idToken))
 
             if (response.isSuccessful && response.body() != null) {
                 val body = response.body()!!

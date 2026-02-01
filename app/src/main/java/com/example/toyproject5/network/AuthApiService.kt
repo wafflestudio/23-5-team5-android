@@ -1,9 +1,11 @@
 package com.example.toyproject5.network
 
-import com.example.toyproject5.dto.GoogleLoginRequest
-import com.example.toyproject5.dto.OAuthLoginResponse
+import com.example.toyproject5.dto.SocialLoginRequest
+import com.example.toyproject5.dto.SocialLoginResponse
 import com.example.toyproject5.dto.LoginRequest
 import com.example.toyproject5.dto.UserResponse
+import com.example.toyproject5.dto.SocialSignupRequest
+import com.example.toyproject5.dto.SocialSignupResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.POST
@@ -19,6 +21,13 @@ interface AuthApiService {
     @POST("api/oauth/login/{provider}")
     suspend fun googleLogin(
         @Path("provider") provider: String = "google",
-        @Body googleLoginRequest: GoogleLoginRequest
-    ): Response<OAuthLoginResponse>
+        @Body googleLoginRequest: SocialLoginRequest
+    ): Response<SocialLoginResponse>
+
+    // 구글 회원가입 API
+    @POST("api/oauth/signUp/{provider}")
+    suspend fun googleSignup(
+        @Path("provider") provider: String = "google",
+        @Body request: SocialSignupRequest
+    ): Response<SocialSignupResponse>
 }
