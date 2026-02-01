@@ -87,7 +87,13 @@ class MyPageViewModel @Inject constructor(
     // 닉네임 변경
     fun updateNickname(newName: String) {
         viewModelScope.launch {
-            userRepository.updateNickname(newName)
+            val result = userRepository.updateNickname(newName)
+
+            result.onSuccess {
+                Log.d("NICKNAME_UPDATE", "닉네임 변경 성공!")
+            }.onFailure { exception ->
+                Log.e("NICKNAME_UPDATE", "실패: ${exception.message}")
+            }
         }
     }
 }
@@ -97,4 +103,5 @@ data class MyPageState(
     val nickname: String = "냐냐",
     val email: String = "ss@university.ac.kr",
     val profileImageUrl: String? = null,
+    val errorMessage: String? = null
 )
