@@ -36,11 +36,18 @@ import com.example.toyproject5.viewmodel.PingViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyPageScreen(pingViewModel: PingViewModel = hiltViewModel(),
-                 myPageViewModel: MyPageViewModel = hiltViewModel()) {
+                 myPageViewModel: MyPageViewModel = hiltViewModel(),
+                 onNavigateToLogin: () -> Unit) {
+
+    // [상태 관리 변수들]
     var showNicknameDialog by remember { mutableStateOf(false) }
     var showProfilePicDialog by remember { mutableStateOf(false) }
+    var showMajorDialog by remember { mutableStateOf(false) }
+    var showBioDialog by remember { mutableStateOf(false) }
+
     val uiState by myPageViewModel.uiState.collectAsState()
     val pingMessage by pingViewModel.pingState.collectAsState()
+    val isLoggedOut by myPageViewModel.isLoggedOut.collectAsState()
 
     // 파일 처리
     val context = LocalContext.current
@@ -50,6 +57,13 @@ fun MyPageScreen(pingViewModel: PingViewModel = hiltViewModel(),
         // [결과 처리] 사용자가 사진을 고르면 이곳으로 사진 주소(uri)가 들어옵니다.
         uri?.let {
             myPageViewModel.uploadProfileImage(it)
+        }
+    }
+
+    // 로그아웃
+    LaunchedEffect(isLoggedOut) {
+        if (isLoggedOut) {
+            onNavigateToLogin()
         }
     }
 
@@ -63,7 +77,7 @@ fun MyPageScreen(pingViewModel: PingViewModel = hiltViewModel(),
                 .background(Color.White)
                 .verticalScroll(rememberScrollState())
         ) {
-            // 프로필 섹션 (이미지, 닉네임, 프로필이미지, 이메일)
+            // 프로필 섹션 (이미지, 닉네임, 프로필이미지, 이메일 기본 정보)
             ProfileSection(
                 nickname = uiState.nickname,
                 email = uiState.email,
@@ -74,16 +88,21 @@ fun MyPageScreen(pingViewModel: PingViewModel = hiltViewModel(),
             Spacer(modifier = Modifier.height(16.dp))
 
             // 사용자 정보 리스트 (닉네임, 이메일 카드)
+            // 전공(major)과 자기소개(bio) 항목 추가
             UserInfoList(
                 nickname = uiState.nickname,
                 email = uiState.email,
-                onNicknameEditClick = { showNicknameDialog = true }
+                major = uiState.major ?: "전공을 입력해주세요",
+                bio = uiState.bio ?: "자기소개를 입력해주세요",
+                onNicknameEditClick = { showNicknameDialog = true },
+                onMajorEditClick = { showMajorDialog = true },
+                onBioEditClick = { showBioDialog = true }
             )
 
             Spacer(modifier = Modifier.height(32.dp))
 
             // 로그아웃 버튼
-            LogoutButton(onLogoutClick = { /* 로그아웃 로직 처리 */ })
+            LogoutButton(onLogoutClick = { myPageViewModel.logout() })
 
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -106,6 +125,28 @@ fun MyPageScreen(pingViewModel: PingViewModel = hiltViewModel(),
             onConfirm = { newName ->
                 myPageViewModel.updateNickname(newName)
                 showNicknameDialog = false
+            }
+        )
+    }
+
+    if (showMajorDialog) {
+        MajorEditDialog(
+            currentMajor = uiState.major ?: "",
+            onDismiss = { showMajorDialog = false },
+            onConfirm = { newMajor ->
+                myPageViewModel.updateMajor(newMajor)
+                showMajorDialog = false
+            }
+        )
+    }
+
+    if (showBioDialog) {
+        BioEditDialog(
+            currentBio = uiState.bio ?: "",
+            onDismiss = { showBioDialog = false },
+            onConfirm = { newBio ->
+                myPageViewModel.updateBio(newBio)
+                showBioDialog = false
             }
         )
     }
@@ -204,12 +245,17 @@ fun ProfileSection(
 fun UserInfoList(
     nickname: String,
     email: String,
-    onNicknameEditClick: () -> Unit
+    major: String,
+    bio: String,
+    onNicknameEditClick: () -> Unit,
+    onMajorEditClick: () -> Unit,
+    onBioEditClick: () -> Unit
 ) {
     Column(
         modifier = Modifier.padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        // 닉네임
         InfoItem(
             icon = Icons.Default.Face,
             iconBg = Color(0xFFDBEAFE),
@@ -218,6 +264,25 @@ fun UserInfoList(
             value = nickname,
             onEditClick = onNicknameEditClick
         )
+        // 전공
+        InfoItem(
+            icon = Icons.Default.School,
+            iconBg = Color(0xFFFEF3C7),
+            iconTint = Color(0xFFD97706),
+            label = "전공",
+            value = major,
+            onEditClick = onMajorEditClick
+        )
+        // 자기소개
+        InfoItem(
+            icon = Icons.Default.Info,
+            iconBg = Color(0xFFF3E8FF),
+            iconTint = Color(0xFF7C3AED),
+            label = "자기소개",
+            value = bio,
+            onEditClick = onBioEditClick
+        )
+        // 이메일
         InfoItem(
             icon = Icons.Default.Email,
             iconBg = Color(0xFFDCFCE7),
@@ -341,6 +406,72 @@ fun NicknameEditDialog(
                 Spacer(modifier = Modifier.height(24.dp))
                 Button(
                     onClick = { onConfirm(tempNickname) },
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEFF6FF))
+                ) {
+                    Text(text = "변경하기", color = Color(0xFF155DFC), fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
+/** 전공 수정 다이얼로그 */
+@Composable
+fun MajorEditDialog(
+    currentMajor: String,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var tempMajor by remember { mutableStateOf(currentMajor) }
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(shape = RoundedCornerShape(10.dp), color = Color.White) {
+            Column(modifier = Modifier.padding(24.dp)) {
+                Text(text = "전공 변경", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedTextField(
+                    value = tempMajor,
+                    onValueChange = { tempMajor = it },
+                    label = { Text("전공 입력") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Button(
+                    onClick = { onConfirm(tempMajor) },
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEFF6FF))
+                ) {
+                    Text(text = "변경하기", color = Color(0xFF155DFC), fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
+/** 자기소개 수정 다이얼로그 (여러 줄 입력 지원) */
+@Composable
+fun BioEditDialog(
+    currentBio: String,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var tempBio by remember { mutableStateOf(currentBio) }
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(shape = RoundedCornerShape(10.dp), color = Color.White) {
+            Column(modifier = Modifier.padding(24.dp)) {
+                Text(text = "자기소개 변경", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedTextField(
+                    value = tempBio,
+                    onValueChange = { tempBio = it },
+                    label = { Text("자기소개 입력") },
+                    modifier = Modifier.fillMaxWidth().height(120.dp), // 자기소개는 높이를 줌
+                    maxLines = 4
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Button(
+                    onClick = { onConfirm(tempBio) },
                     modifier = Modifier.fillMaxWidth().height(48.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEFF6FF))
                 ) {

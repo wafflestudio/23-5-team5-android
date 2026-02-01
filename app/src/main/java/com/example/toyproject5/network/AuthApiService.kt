@@ -3,7 +3,7 @@ package com.example.toyproject5.network
 import com.example.toyproject5.dto.SocialLoginRequest
 import com.example.toyproject5.dto.SocialLoginResponse
 import com.example.toyproject5.dto.LoginRequest
-import com.example.toyproject5.dto.UserResponse
+import com.example.toyproject5.dto.LoginResponse
 import com.example.toyproject5.dto.SocialSignupRequest
 import com.example.toyproject5.dto.SocialSignupResponse
 import retrofit2.Response
@@ -15,7 +15,7 @@ interface AuthApiService {
     @POST("api/auth/login")
     suspend fun login(
         @Body loginRequest: LoginRequest
-    ): Response<UserResponse>
+    ): Response<LoginResponse>
 
     // 구글 로그인 API
     @POST("api/oauth/login/{provider}")

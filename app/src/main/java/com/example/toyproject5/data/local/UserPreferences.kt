@@ -19,6 +19,9 @@ class UserPreferences @Inject constructor(
         val PROFILE_IMAGE_KEY = stringPreferencesKey("profile_image_uri")
         val TOKEN_KEY = stringPreferencesKey("user_token")
         val EMAIL_KEY = stringPreferencesKey("user_email")
+        val MAJOR_KEY = stringPreferencesKey("user_major")
+        val BIO_KEY = stringPreferencesKey("user_bio")
+
     }
 
     // 로컬 저장소에서 실시간으로 닉네임을 읽어옴
@@ -49,13 +52,28 @@ class UserPreferences @Inject constructor(
             preferences[PROFILE_IMAGE_KEY]
         }
 
+    // 로컬 저장소에서 실시간으로 token값을 읽어옴
     val tokenFlow: Flow<String?> = dataStore.data
         .catch { exception ->
             if (exception is IOException) emit(emptyPreferences()) else throw exception
         }
         .map { preferences ->
-            preferences[TOKEN_KEY]
+            preferences[TOKEN_KEY] // 저장된 토큰이 없으면 null 반환
         }
+
+    // 전공 읽기
+    val majorFlow: Flow<String?> = dataStore.data
+        .catch { exception ->
+            if (exception is IOException) emit(emptyPreferences()) else throw exception
+        }
+        .map { preferences -> preferences[MAJOR_KEY] }
+
+    // 자기소개 읽기
+    val bioFlow: Flow<String?> = dataStore.data
+        .catch { exception ->
+            if (exception is IOException) emit(emptyPreferences()) else throw exception
+        }
+        .map { preferences -> preferences[BIO_KEY] }
 
     // 사용자가 입력한 새로운 닉네임을 저장소에 기록함
     suspend fun saveNickname(newNickname: String) {
@@ -84,4 +102,27 @@ class UserPreferences @Inject constructor(
             preferences[TOKEN_KEY] = token
         }
     }
+
+    // 전공 저장
+    suspend fun saveMajor(major: String) {
+        dataStore.edit { preferences ->
+            preferences[MAJOR_KEY] = major
+        }
+    }
+
+    // 자기소개 저장
+    suspend fun saveBio(bio: String) {
+        dataStore.edit { preferences ->
+            preferences[BIO_KEY] = bio
+        }
+    }
+
+    // 로그이웃: 모든 정보 삭제
+    suspend fun clearUserData() {
+        dataStore.edit { preferences ->
+            preferences.clear()
+        }
+    }
+
+
 }

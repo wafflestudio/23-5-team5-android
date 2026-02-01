@@ -7,6 +7,12 @@ data class LoginRequest(
     @SerializedName("password") val password: String
 )
 
+data class LoginResponse(
+    @SerializedName("access_token") val accessToken: String,
+    @SerializedName("nickname") val nickname: String,
+    @SerializedName("is_verified") val isVerified: Boolean
+)
+
 data class SocialLoginRequest(
     val token: String
 )
@@ -35,10 +41,24 @@ data class SocialSignupResponse(
 data class UserResponse(
     @SerializedName("accessToken") val accessToken: String,
     @SerializedName("nickname") val nickname: String,
-    @SerializedName("isVerified") val isVerified: Boolean
+    @SerializedName("is_verified") val isVerified: Boolean
 )
+
+data class UserMeResponse(
+    @SerializedName("user_id") val userId: Long,
+    val username: String,
+    val major: String?,
+    @SerializedName("student_number") val studentNumber: String,
+    val nickname: String,
+    @SerializedName("profile_image_url") val profileImageUrl: String?,
+    val bio: String?,
+    val role: String,
+    @SerializedName("created_at") val createdAt: String
+)
+
 data class ImageResponse(
-    @SerializedName("status") val status: String,
-    @SerializedName("message") val message: String,
-    @SerializedName("imageUrl") val imageUrl: String // todo:서버에 저장된 진짜 인터넷 주소
+    @SerializedName("user_id") val userId: Int,
+    @SerializedName("username") val username: String,
+    @SerializedName("nickname") val nickname: String,
+    @SerializedName("profile_image_url") val profileImageUrl: String?,
 )

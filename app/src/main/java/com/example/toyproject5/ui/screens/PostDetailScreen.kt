@@ -1,5 +1,6 @@
 package com.example.toyproject5.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -8,25 +9,52 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.toyproject5.data.mockPosts
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.toyproject5.viewmodel.GroupViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PostDetailScreen(postId: String, onBack: () -> Unit) {
-    val post = mockPosts.find { it.id == postId } ?: return
+fun PostDetailScreen(
+    postId: String, 
+    onBack: () -> Unit,
+    viewModel: GroupViewModel = hiltViewModel()
+) {
+    val post by viewModel.selectedGroup.collectAsState()
+    val context = LocalContext.current
+
+    if (post == null) {
+        // In case of direct navigation or process death, we might want to fetch it
+        // but since there's no single fetch API, we just show a loading or error
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
+    val currentPost = post!!
+    val isClosed = currentPost.status != "RECRUITING"
+    val categoryName = when (currentPost.categoryId) {
+        1 -> "스터디"
+        2 -> "고시"
+        3 -> "취준"
+        4 -> "대외활동"
+        else -> "기타"
+    }
 
     Scaffold(
         topBar = {
@@ -47,12 +75,23 @@ fun PostDetailScreen(postId: String, onBack: () -> Unit) {
                     .padding(16.dp)
             ) {
                 Button(
-                    onClick = { /* 참여하기 로직 */ },
+                    onClick = { 
+                        viewModel.joinGroup(currentPost.id) {
+                            Toast.makeText(context, "참여 신청이 완료되었습니다.", Toast.LENGTH_SHORT).show()
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF155DFC))
+                    enabled = !isClosed,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isClosed) Color.Gray else Color(0xFF155DFC)
+                    )
                 ) {
-                    Text("참여하기", fontWeight = FontWeight.Bold, color = Color.White)
+                    Text(
+                        text = if (isClosed) "모집 마감" else "참여하기", 
+                        fontWeight = FontWeight.Bold, 
+                        color = Color.White
+                    )
                 }
             }
         }
@@ -70,42 +109,54 @@ fun PostDetailScreen(postId: String, onBack: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
-                    color = Color(0xFFDBEAFE),
+                    color = if (isClosed) Color(0xFFF3F4F6) else Color(0xFFDBEAFE),
                     shape = RoundedCornerShape(20.dp)
                 ) {
                     Text(
-                        text = post.category,
+                        text = if (isClosed) "마감됨" else categoryName,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                        color = Color(0xFF1447E6),
+                        color = if (isClosed) Color(0xFF6A7282) else Color(0xFF1447E6),
                         fontSize = 14.sp
                     )
                 }
-                Text(text = post.createdAt, color = Color(0xFF6A7282), fontSize = 14.sp)
+                Text(text = currentPost.createdAt?.take(10) ?: "", color = Color(0xFF6A7282), fontSize = 14.sp)
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = post.title,
+                text = currentPost.groupName,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF0A0A0A)
+                color = if (isClosed) Color(0xFF99A1AF) else Color(0xFF0A0A0A)
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            DetailItem(icon = Icons.Default.Info, label = "분야", value = post.field ?: "-")
+            DetailItem(
+                icon = Icons.Default.Info, 
+                label = "방식", 
+                value = if (currentPost.isOnline) "온라인" else "오프라인"
+            )
             Spacer(modifier = Modifier.height(12.dp))
-            DetailItem(icon = Icons.Default.DateRange, label = "일시", value = post.date ?: "-")
+            DetailItem(
+                icon = Icons.Default.Person, 
+                label = "정원", 
+                value = "${currentPost.capacity ?: "무제한"}"
+            )
             Spacer(modifier = Modifier.height(12.dp))
-            DetailItem(icon = Icons.Default.LocationOn, label = "장소", value = post.location ?: "-")
+            DetailItem(
+                icon = Icons.Default.LocationOn, 
+                label = "장소/플랫폼", 
+                value = currentPost.location
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(text = "소개", fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = post.description,
+                text = currentPost.description,
                 fontSize = 16.sp,
                 color = Color(0xFF364153),
                 lineHeight = 24.sp
@@ -116,7 +167,7 @@ fun PostDetailScreen(postId: String, onBack: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Person, contentDescription = null, tint = Color(0xFF6A7282))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "작성자", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text(text = "방장 정보", fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -135,15 +186,16 @@ fun PostDetailScreen(postId: String, onBack: () -> Unit) {
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = post.authorName.take(1),
+                        text = "L",
                         color = Color.White,
                         fontWeight = FontWeight.Bold
                     )
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
-                    Text(text = post.authorName, fontSize = 16.sp, fontWeight = FontWeight.Medium)
-                    Text(text = post.authorEmail, fontSize = 14.sp, color = Color(0xFF6A7282))
+                    Text(text = "방장 ID: ${currentPost.leaderId}", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    // Note: Basic GroupResponse doesn't have detailed leader info like name/email
+                    // This would require an additional user fetch if needed.
                 }
             }
             
