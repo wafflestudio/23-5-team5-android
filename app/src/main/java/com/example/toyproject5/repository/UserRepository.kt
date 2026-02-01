@@ -85,7 +85,6 @@ class UserRepository @Inject constructor(
 
                 Result.success(updatedData)
             } else {
-                // 4. 에러 코드별 상세 처리
                 val errorMessage = when (response.code()) {
                     409 -> "이미 사용 중인 닉네임입니다."
                     400 -> "입력값이 유효하지 않습니다."

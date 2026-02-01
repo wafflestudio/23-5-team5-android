@@ -104,28 +104,23 @@ class MyPageViewModel @Inject constructor(
     fun updateNickname(newName: String) {
         if (newName.isBlank()) return
 
-        // [선조치] 서버 응답을 기다리지 않고 UI를 즉시 바꿉니다.
+        // [선조치] 서버 응답을 기다리지 않고 UI 변경
         _tempNickname.value = newName
         _errorMessage.value = null
 
         viewModelScope.launch {
             try {
-                // [본 작업] 서버에 수정 요청 (이미 만들어두신 Result 반환 함수 사용)
                 val result = userRepository.updateNickname(newName)
 
                 result.onFailure { exception ->
-                    // [실패 시 롤백] 서버 저장 실패 시 임시 값을 지워 원래 이름으로 되돌립니다.
+                    // [실패 시 롤백]
                     _tempNickname.value = null
                     _errorMessage.value = exception.message ?: "닉네임 수정에 실패했습니다."
                 }
-                // 성공 시에는 Repository 내부에서 DataStore를 업데이트하므로
-                // 자연스럽게 정식 데이터(nickname)가 flow를 타고 내려옵니다.
             } catch (e: Exception) {
                 _tempNickname.value = null
                 _errorMessage.value = "네트워크 오류가 발생했습니다."
             } finally {
-                // 작업 완료 후(성공/실패 모두) 임시 값은 비워줍니다.
-                // 성공했다면 이미 DataStore의 값이 nickname으로 들어오고 있을 것입니다.
                 _tempNickname.value = null
             }
         }
@@ -141,6 +136,8 @@ class MyPageViewModel @Inject constructor(
 data class MyPageState(
     val nickname: String = "냐냐",
     val email: String = "ss@university.ac.kr",
+    val major: String = "전공",
+    val bio: String = "설명",
     val profileImageUrl: String? = null,
     val errorMessage: String? = null
 )
