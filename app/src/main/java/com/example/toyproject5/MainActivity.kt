@@ -37,7 +37,7 @@ class MainActivity : ComponentActivity() {
             if (isLoggedIn != null) {
                 NavHost(
                     navController = rootNavController,
-                    startDestination = if (isLoggedIn == true) NavRoute.Main.route else NavRoute.Login.route
+                    startDestination = NavRoute.Splash.route
                 ) {
                     //  Splash 화면 추가
                     composable(NavRoute.Splash.route) {

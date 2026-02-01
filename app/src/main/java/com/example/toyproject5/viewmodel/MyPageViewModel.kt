@@ -194,7 +194,7 @@ class MyPageViewModel @Inject constructor(
 
 // MyPageState 클래스
 data class MyPageState(
-    val nickname: String = "냐냐",
+    val nickname: String = "임시 닉네임",
     val email: String = "ss@university.ac.kr",
     val major: String = "전공",
     val bio: String = "설명",

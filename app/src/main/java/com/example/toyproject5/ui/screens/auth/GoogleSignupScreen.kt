@@ -53,7 +53,7 @@ fun GoogleSignupScreen(
                 text = "구글 회원가입",
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF1D366D) // SNU 블루 계열
+                color = Color(0xFF1D366D)
             )
 
             Text(
