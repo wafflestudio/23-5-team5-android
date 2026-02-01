@@ -23,9 +23,9 @@ class UserRepository @Inject constructor(
     val email: Flow<String> = userDataStore.emailFlow
 
     // 2. 쓰기: 사용자가 닉네임을 변경했을 때 호출
-    suspend fun updateNickname(newName: String) {
+    suspend fun updateNickname(newName: String): Result<UserMeResponse> {
         // 나중에 여기에 서버 통신 코드(apiService.updateNickname)가 추가될 예정
-        userDataStore.saveNickname(newName)
+        return updateProfileInfo(nickname = newName)
     }
 
     // 정보 불러오기
@@ -50,6 +50,51 @@ class UserRepository @Inject constructor(
             }
         } catch (e: Exception) {
             // 네트워크 연결 오류 등
+            Result.failure(e)
+        }
+    }
+
+    // 유저 정보 변경
+    suspend fun updateProfileInfo(
+        nickname: String? = null,
+        major: String? = null,
+        bio: String? = null
+    ): Result<UserMeResponse> {
+        return try {
+            val nicknamePart = nickname?.let {
+                MultipartBody.Part.createFormData("nickname", it)
+            }
+            val majorPart = major?.let {
+                MultipartBody.Part.createFormData("major", it)
+            }
+            val bioPart = bio?.let {
+                MultipartBody.Part.createFormData("bio", it)
+            }
+
+            val response = userApiService.updateProfileText(
+                nickname = nicknamePart,
+                major = majorPart,
+                bio = bioPart
+            )
+
+            if (response.isSuccessful && response.body() != null) {
+                val updatedData = response.body()!!
+
+                // TODO: 현재 예시에서는 닉네임만 저장하고 있지만, major 등도 저장
+                userDataStore.saveNickname(updatedData.nickname)
+
+                Result.success(updatedData)
+            } else {
+                // 4. 에러 코드별 상세 처리
+                val errorMessage = when (response.code()) {
+                    409 -> "이미 사용 중인 닉네임입니다."
+                    400 -> "입력값이 유효하지 않습니다."
+                    else -> "프로필 수정 실패 (에러 코드: ${response.code()})"
+                }
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            // 네트워크 연결 실패 등 예외 처리
             Result.failure(e)
         }
     }
