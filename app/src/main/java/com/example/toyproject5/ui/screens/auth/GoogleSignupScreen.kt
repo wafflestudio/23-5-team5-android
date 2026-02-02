@@ -76,17 +76,6 @@ fun GoogleSignupScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 학번 입력창
-            OutlinedTextField(
-                value = viewModel.studentNumber,
-                onValueChange = { viewModel.studentNumber = it },
-                label = { Text("학번 (예: 2026-12345)") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
             // 닉네임 입력창
             OutlinedTextField(
                 value = viewModel.nickname,
@@ -108,7 +97,6 @@ fun GoogleSignupScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
                 enabled = !uiState.isLoading &&
                         viewModel.major.isNotBlank() &&
-                        viewModel.studentNumber.isNotBlank() &&
                         viewModel.nickname.isNotBlank()
             ) {
                 if (uiState.isLoading) {

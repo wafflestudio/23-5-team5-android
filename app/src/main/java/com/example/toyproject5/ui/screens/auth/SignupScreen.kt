@@ -1,7 +1,6 @@
 package com.example.toyproject5.ui.screens.auth
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
@@ -18,6 +17,7 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.activity.compose.BackHandler
 import com.example.toyproject5.viewmodel.SignupViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -28,6 +28,11 @@ fun SignupScreen(
 ) {
 
     val uiState by viewModel.uiState.collectAsState()
+    // 시스템 뒤로가기 버튼 활성화
+    BackHandler(enabled = uiState.currentStep > 1) {
+        viewModel.moveToPreviousStep()
+    }
+
     val snackbarHostState = remember { SnackbarHostState() }
     val timeLeft by viewModel.timeLeft.collectAsState()
 
@@ -49,7 +54,14 @@ fun SignupScreen(
             TopAppBar(
                 title = { Text("회원가입") },
                 navigationIcon = {
-                    IconButton(onClick = {viewModel.moveToPreviousStep()}) {
+                    IconButton(onClick = {
+                        if (uiState.currentStep > 1) {
+                            viewModel.moveToPreviousStep()
+                        } else {
+                            // 첫 번째 단계에서 뒤로 가기하면 로그인 화면으로
+                            onSignupComplete()
+                        }
+                    }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "뒤로가기")
                     }
                 }
@@ -364,8 +376,7 @@ fun InfoInputStep(
             onValueChange = onConfirmChange,
             label = { Text("비밀번호 확인") },
             modifier = Modifier.fillMaxWidth(),
-            // 일치하지 않을 때 에러 색상 표시
-            isError = isPasswordMismatch,
+            isError = isPasswordMismatch,   // 일치하지 않을 때 에러 색상 표시
             singleLine = true,
             visualTransformation = if (isConfirmVisible) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -387,7 +398,6 @@ fun InfoInputStep(
             placeholder = { Text("예: 컴퓨터공학부") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
-            shape = RoundedCornerShape(12.dp)
         )
 
         // 3. 에러 메시지 우선순위 노출
