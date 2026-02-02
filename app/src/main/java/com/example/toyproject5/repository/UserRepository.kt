@@ -182,7 +182,7 @@ class UserRepository @Inject constructor(
                     }
                 } ?: "인증 확인 중 오류가 발생했습니다."
 
-                // 3. 추출한 실제 서버 메시지를 Exception에 담아 반환합니다.
+                // 실제 서버 메시지를 Exception에 담아 반환
                 Result.failure(Exception(errorMessage))
             }
         } catch (e: Exception) {
@@ -200,7 +200,18 @@ class UserRepository @Inject constructor(
                 userDataStore.saveToken(body.accessToken)
                 Result.success(body)
             } else {
-                Result.failure(Exception("회원가입 실패"))
+                val errorBodyString = response.errorBody()?.string()
+
+                val errorMessage = errorBodyString?.let {
+                    try {
+                        JSONObject(it).getString("message")
+                    } catch (e: Exception) {
+                        null
+                    }
+                } ?: "회원가입 중 오류가 발생했습니다."
+
+                // 실제 서버 메시지를 Exception에 담아 반환
+                Result.failure(Exception(errorMessage))
             }
         } catch (e: Exception) {
             Result.failure(e)

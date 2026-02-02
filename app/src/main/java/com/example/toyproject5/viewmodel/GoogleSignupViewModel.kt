@@ -33,7 +33,7 @@ class GoogleSignupViewModel @Inject constructor(
 
             // API 요청 객체 생성
             val request = SocialSignupRequest(
-                registerToken = registerToken,
+                register_token = registerToken,
                 email = email,
                 major = major,
                 student_number = studentNumber,

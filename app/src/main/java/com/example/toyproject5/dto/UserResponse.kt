@@ -24,11 +24,11 @@ data class EmailConfirmRequest(
 
 // 3. 일반 회원가입 요청
 data class SignupRequest(
-    val email: String,
-    val password: String,
-    val major: String,
-    val student_number: String,
-    val nickname: String
+    @SerializedName("username") val email: String,
+    @SerializedName("password") val password: String,
+    @SerializedName("major") val major: String,
+    @SerializedName("student_number") val student_number: String,
+    @SerializedName("nickname") val nickname: String
 )
 
 data class SocialLoginRequest(
@@ -42,7 +42,7 @@ data class SocialLoginResponse(
 
 // 소셜 회원가입 요청
 data class SocialSignupRequest(
-    val registerToken: String,
+    val register_token: String,
     val email: String?,  // 스누메일이면 해당 이메일, 아니면 null
     val major: String,
     val student_number: String,
