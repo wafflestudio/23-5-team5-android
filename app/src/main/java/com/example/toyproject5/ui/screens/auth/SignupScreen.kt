@@ -109,10 +109,12 @@ fun SignupScreen(
                     password = viewModel.password,
                     passwordConfirm = viewModel.passwordConfirm,
                     major = viewModel.major, // 추가
+                    studentNumber = viewModel.studentNumber,
                     onNicknameChange = { viewModel.nickname = it },
                     onPasswordChange = { viewModel.password = it },
                     onConfirmChange = { viewModel.passwordConfirm = it },
                     onMajorChange = { viewModel.major = it },
+                    onStudentNumberChange = { viewModel.studentNumber = it },
                     onComplete = { viewModel.completeSignup() },
                     isLoading = uiState.isLoading
                 )
@@ -308,10 +310,12 @@ fun InfoInputStep(
     password: String,
     passwordConfirm: String,
     major: String,
+    studentNumber: String,
     onNicknameChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
     onConfirmChange: (String) -> Unit,
     onMajorChange: (String) -> Unit,
+    onStudentNumberChange: (String) -> Unit,
     onComplete: () -> Unit,
     isLoading: Boolean
 ) {
@@ -325,6 +329,7 @@ fun InfoInputStep(
             password != passwordConfirm
     val isAllFieldsFilled = nickname.isNotBlank() &&
             major.isNotBlank() &&
+            studentNumber.isNotBlank() &&
             password.isNotBlank() &&
             passwordConfirm.isNotBlank()
 
@@ -398,6 +403,20 @@ fun InfoInputStep(
             placeholder = { Text("예: 컴퓨터공학부") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // 학번 입력창
+        OutlinedTextField(
+            value = studentNumber,
+            onValueChange = onStudentNumberChange,
+            label = { Text("학번") },
+            placeholder = { Text("예: 2026-12345") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            // 학번은 숫자와 하이픈 위주이므로 숫자 키패드를 기본으로 띄워줍니다.
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
         )
 
         // 3. 에러 메시지 우선순위 노출

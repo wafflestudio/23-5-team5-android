@@ -112,6 +112,7 @@ class SignupViewModel @Inject constructor(
                 email = email,
                 password = password,
                 major = major,
+                student_number = studentNumber,
                 nickname = nickname
             )
             val result = userRepository.signup(request)

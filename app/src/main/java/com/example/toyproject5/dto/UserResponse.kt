@@ -27,6 +27,7 @@ data class SignupRequest(
     val email: String,
     val password: String,
     val major: String,
+    val student_number: String,
     val nickname: String
 )
 
@@ -44,6 +45,7 @@ data class SocialSignupRequest(
     val registerToken: String,
     val email: String?,  // 스누메일이면 해당 이메일, 아니면 null
     val major: String,
+    val student_number: String,
     val nickname: String
 )
 

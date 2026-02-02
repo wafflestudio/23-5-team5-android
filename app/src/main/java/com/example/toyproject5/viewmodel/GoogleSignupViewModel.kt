@@ -36,6 +36,7 @@ class GoogleSignupViewModel @Inject constructor(
                 registerToken = registerToken,
                 email = email,
                 major = major,
+                student_number = studentNumber,
                 nickname = nickname
             )
 
