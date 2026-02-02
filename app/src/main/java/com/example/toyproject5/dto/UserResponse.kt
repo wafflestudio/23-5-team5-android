@@ -13,6 +13,24 @@ data class LoginResponse(
     @SerializedName("is_verified") val isVerified: Boolean
 )
 
+// 1. 인증 메일 발송 요청
+data class EmailVerificationRequest(val email: String)
+
+// 2. 인증 번호 확인 요청
+data class EmailConfirmRequest(
+    val email: String,
+    val code: String
+)
+
+// 3. 일반 회원가입 요청
+data class SignupRequest(
+    val email: String,
+    val password: String,
+    val major: String,
+    val student_number: String,
+    val nickname: String
+)
+
 data class SocialLoginRequest(
     val token: String
 )
@@ -31,7 +49,7 @@ data class SocialSignupRequest(
     val nickname: String
 )
 
-data class SocialSignupResponse(
+data class SignupResponse(
     val accessToken: String,
     val username: String,
     val nickname: String,

@@ -1,11 +1,14 @@
 package com.example.toyproject5.network
 
+import com.example.toyproject5.dto.EmailConfirmRequest
+import com.example.toyproject5.dto.EmailVerificationRequest
 import com.example.toyproject5.dto.SocialLoginRequest
 import com.example.toyproject5.dto.SocialLoginResponse
 import com.example.toyproject5.dto.LoginRequest
 import com.example.toyproject5.dto.LoginResponse
+import com.example.toyproject5.dto.SignupRequest
+import com.example.toyproject5.dto.SignupResponse
 import com.example.toyproject5.dto.SocialSignupRequest
-import com.example.toyproject5.dto.SocialSignupResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.POST
@@ -16,6 +19,24 @@ interface AuthApiService {
     suspend fun login(
         @Body loginRequest: LoginRequest
     ): Response<LoginResponse>
+
+    // 인증번호 발송
+    @POST("api/auth/code")
+    suspend fun sendVerificationEmail(
+        @Body request: EmailVerificationRequest
+    ): Response<Unit>
+
+    // 인증번호 확인
+    @POST("api/auth/verify")
+    suspend fun verifyEmailCode(
+        @Body request: EmailConfirmRequest
+    ): Response<Unit>
+
+    // 일반 회원가입
+    @POST("api/auth/signup")
+    suspend fun signup(
+        @Body request: SignupRequest
+    ): Response<SignupResponse>
 
     // 구글 로그인 API
     @POST("api/oauth/login/{provider}")
@@ -29,5 +50,5 @@ interface AuthApiService {
     suspend fun googleSignup(
         @Path("provider") provider: String = "google",
         @Body request: SocialSignupRequest
-    ): Response<SocialSignupResponse>
+    ): Response<SignupResponse>
 }

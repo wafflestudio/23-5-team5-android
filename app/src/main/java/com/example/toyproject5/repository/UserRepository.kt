@@ -1,20 +1,23 @@
 package com.example.toyproject5.repository
 
 import com.example.toyproject5.data.local.UserPreferences
+import com.example.toyproject5.dto.EmailConfirmRequest
+import com.example.toyproject5.dto.EmailVerificationRequest
 import com.example.toyproject5.dto.SocialLoginRequest
 import com.example.toyproject5.dto.LoginRequest
 import com.example.toyproject5.dto.LoginResponse
+import com.example.toyproject5.dto.SignupRequest
 import com.example.toyproject5.dto.UserMeResponse
 import com.example.toyproject5.dto.SocialLoginResponse
 import com.example.toyproject5.dto.SocialSignupRequest
-import com.example.toyproject5.dto.SocialSignupResponse
-import com.example.toyproject5.dto.UserResponse
+import com.example.toyproject5.dto.SignupResponse
 import com.example.toyproject5.network.AuthApiService
 import com.example.toyproject5.network.UserApiService
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import okhttp3.MultipartBody
+import org.json.JSONObject
 import kotlin.let
 
 class UserRepository @Inject constructor(
@@ -117,7 +120,6 @@ class UserRepository @Inject constructor(
         }
     }
 
-    // 로그인 함수
     /**
      * [일반 로그인 함수]
      * @param loginRequest: 이메일과 비밀번호가 담긴 객체
@@ -146,6 +148,59 @@ class UserRepository @Inject constructor(
             } else {
                 // 서버 에러 처리
                 Result.failure(Exception("로그인 실패 (에러 코드: ${response.code()})"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // 이메일 인증 발송
+    suspend fun sendEmail(email: String): Result<Unit> {
+        return try {
+            val response = authApiService.sendVerificationEmail(EmailVerificationRequest(email))
+            if (response.isSuccessful) Result.success(Unit)
+            else Result.failure(Exception("메일 발송 실패"))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // 인증 코드 확인
+    suspend fun verifyCode(email: String, code: String): Result<Unit> {
+        return try {
+            val response = authApiService.verifyEmailCode(EmailConfirmRequest(email, code))
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                val errorBodyString = response.errorBody()?.string()
+
+                val errorMessage = errorBodyString?.let {
+                    try {
+                        JSONObject(it).getString("message")
+                    } catch (e: Exception) {
+                        null
+                    }
+                } ?: "인증 확인 중 오류가 발생했습니다."
+
+                // 3. 추출한 실제 서버 메시지를 Exception에 담아 반환합니다.
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // 회원가입
+    suspend fun signup(request: SignupRequest): Result<SignupResponse> {
+        return try {
+            val response = authApiService.signup(request)
+            if (response.isSuccessful && response.body() != null) {
+                val body = response.body()!!
+                // 가입 성공 시 토큰 저장
+                userDataStore.saveToken(body.accessToken)
+                Result.success(body)
+            } else {
+                Result.failure(Exception("회원가입 실패"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -189,7 +244,7 @@ class UserRepository @Inject constructor(
      * @param request: 서버가 요구하는 추가 정보 (임시 토큰, 학과, 학번, 닉네임 등)
      * @return Result<SocialSignupResponse>: 최종 가입 및 로그인 성공 결과
      */
-    suspend fun googleSignup(request: SocialSignupRequest): Result<SocialSignupResponse> {
+    suspend fun googleSignup(request: SocialSignupRequest): Result<SignupResponse> {
         return try {
             // 소셜 회원가입 API 호출
             val response = authApiService.googleSignup(provider = "google", request = request)

@@ -158,8 +158,6 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-        Spacer(modifier = Modifier.height(16.dp))
-
             // 2. 앱 타이틀 및 설명
             Text(
                 text = "팀원 모집 플랫폼",
@@ -216,58 +214,37 @@ fun LoginScreen(
             // 5. 로그인 버튼
             Button(
                 onClick = { viewModel.login() },
-                enabled = !uiState.isLoading, // 로딩 중 클릭 방지
+                enabled = !uiState.isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
             ) {
-                Text(text = "로그인", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                } else {
+                    Text(text = "로그인", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
             }
-        // 5. 로그인 버튼
-        Button(
-            onClick = { viewModel.login() },
-            enabled = !uiState.isLoading,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
-        ) {
-            if (uiState.isLoading) {
-                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-            } else {
-                Text(text = "로그인", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Google 로그인 버튼
-        OutlinedButton(
-            onClick = {
-                launcher.launch(googleSignInClient.signInIntent)
-            },
-            enabled = !uiState.isLoading,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp),
-            shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.dp, Color.LightGray),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black)
-        ) {
-            Text(text = "Google 계정으로 로그인", fontSize = 16.sp)
-        }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // 6. 구글 로그인 버튼
-            GoogleSignInImageButton(
+            // Google 로그인 버튼
+            OutlinedButton(
                 onClick = {
                     launcher.launch(googleSignInClient.signInIntent)
-                }
-            )
+                },
+                enabled = !uiState.isLoading,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, Color.LightGray),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black)
+            ) {
+                Text(text = "Google 계정으로 로그인", fontSize = 16.sp)
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -284,9 +261,9 @@ fun LoginScreen(
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.clickable { onSignupClick() }
-                )
+                    )
+                }
             }
-        }
 
         if (uiState.errorMessage != null) {
             Spacer(modifier = Modifier.height(16.dp))
@@ -297,37 +274,5 @@ fun LoginScreen(
                 textAlign = TextAlign.Center
             )
         }
-    }
-}
-
-@Composable
-fun GoogleSignInImageButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    // 클릭했을 때 물결(Ripple) 효과를 주기 위한 설정
-    val interactionSource = remember { MutableInteractionSource() }
-
-    Surface(
-        // 1. Surface를 써서 배경을 투명하게 만듭니다.
-        color = Color.Transparent,
-        modifier = modifier
-            // 2. 이미지 크기에 딱 맞게 감싸줍니다.
-            .wrapContentSize()
-            // 3. 여기가 핵심! 클릭 기능을 달아줍니다.
-            .clickable(
-                interactionSource = interactionSource,
-                indication = rememberRipple(bounded = true), // 물결 효과 추가
-                onClick = onClick
-            )
-    ) {
-        Image(
-            painter = painterResource(id = R.drawable.ic_google_signin),
-            contentDescription = "Google로 로그인",
-            // 이미지가 비율을 유지하면서 꽉 차게 설정
-            contentScale = ContentScale.Fit,
-            // 스크린샷에 나온 높이(40dp)로 설정하면 가장 예쁘게 나옵니다.
-            modifier = Modifier.height(40.dp)
-        )
     }
 }
