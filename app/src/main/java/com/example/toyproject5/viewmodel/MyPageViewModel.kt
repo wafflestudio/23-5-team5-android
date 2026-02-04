@@ -59,6 +59,9 @@ class MyPageViewModel @Inject constructor(
         )
     ) { array: Array<Any?> -> // 중요: 파라미터를 6개가 아닌 'array' 하나로 받습니다.
 
+        if (isLoggingOut) {
+            return@combine this@MyPageViewModel.uiState.value
+        }
         // 여기서 타입을 하나씩 지정해줍니다 (Casting)
         val nickname = array[0] as String
         val email = array[1] as String
@@ -122,8 +125,13 @@ class MyPageViewModel @Inject constructor(
     // 로그아웃
     private val _isLoggedOut = MutableStateFlow(false)
     val isLoggedOut = _isLoggedOut.asStateFlow()
+    private var isLoggingOut = false
 
     fun logout() {
+
+        if (isLoggingOut) return
+        isLoggingOut = true
+
         viewModelScope.launch {
             userRepository.logout()
             _isLoggedOut.value = true // 로그아웃 성공 신호!
