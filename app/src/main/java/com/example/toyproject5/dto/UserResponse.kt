@@ -13,16 +13,18 @@ data class LoginResponse(
     @SerializedName("is_verified") val isVerified: Boolean
 )
 
-// 1. 인증 메일 발송 요청
-data class EmailVerificationRequest(val email: String)
+// 인증 메일 발송
+data class EmailVerificationRequest(
+    val email: String
+)
 
-// 2. 인증 번호 확인 요청
+// 인증 번호 확인
 data class EmailConfirmRequest(
     val email: String,
     val code: String
 )
 
-// 3. 일반 회원가입 요청
+// 일반 회원가입
 data class SignupRequest(
     @SerializedName("username") val email: String,
     @SerializedName("password") val password: String,
@@ -31,6 +33,7 @@ data class SignupRequest(
     @SerializedName("nickname") val nickname: String
 )
 
+// 소셜 로그인
 data class SocialLoginRequest(
     val token: String
 )
@@ -40,7 +43,14 @@ data class SocialLoginResponse(
     val token: String  // 임시 토큰 또는 최종 액세스 토큰
 )
 
-// 소셜 회원가입 요청
+// 소셜 인증 코드 확인
+data class SocialVerifyRequest(
+    @SerializedName("register_token") val register_token: String,
+    @SerializedName("email") val email: String,
+    @SerializedName("code") val code: String
+)
+
+// 소셜 회원가입
 data class SocialSignupRequest(
     val register_token: String,
     val email: String?,  // 스누메일이면 해당 이메일, 아니면 null

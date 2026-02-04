@@ -9,12 +9,14 @@ import com.example.toyproject5.dto.LoginResponse
 import com.example.toyproject5.dto.SignupRequest
 import com.example.toyproject5.dto.SignupResponse
 import com.example.toyproject5.dto.SocialSignupRequest
+import com.example.toyproject5.dto.SocialVerifyRequest
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.POST
 import retrofit2.http.Path
 
 interface AuthApiService {
+    // 일반 로그인
     @POST("api/auth/login")
     suspend fun login(
         @Body loginRequest: LoginRequest
@@ -43,6 +45,12 @@ interface AuthApiService {
     suspend fun googleLogin(
         @Path("provider") provider: String = "google",
         @Body googleLoginRequest: SocialLoginRequest
+    ): Response<SocialLoginResponse>
+
+    // 소셜 인증번호 확인
+    @POST("api/auth/social/verify") // 예시: 코드 확인
+    suspend fun verifySocialEmailCode(
+        @Body request: SocialVerifyRequest
     ): Response<SocialLoginResponse>
 
     // 구글 회원가입 API

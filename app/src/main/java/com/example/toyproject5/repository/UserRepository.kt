@@ -11,6 +11,7 @@ import com.example.toyproject5.dto.UserMeResponse
 import com.example.toyproject5.dto.SocialLoginResponse
 import com.example.toyproject5.dto.SocialSignupRequest
 import com.example.toyproject5.dto.SignupResponse
+import com.example.toyproject5.dto.SocialVerifyRequest
 import com.example.toyproject5.network.AuthApiService
 import com.example.toyproject5.network.UserApiService
 import javax.inject.Inject
@@ -158,8 +159,22 @@ class UserRepository @Inject constructor(
     suspend fun sendEmail(email: String): Result<Unit> {
         return try {
             val response = authApiService.sendVerificationEmail(EmailVerificationRequest(email))
-            if (response.isSuccessful) Result.success(Unit)
-            else Result.failure(Exception("메일 발송 실패"))
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            }
+            else {
+                val errorBodyString = response.errorBody()?.string()
+
+                val errorMessage = errorBodyString?.let {
+                    try {
+                        JSONObject(it).getString("message")
+                    } catch (e: Exception) {
+                        null
+                    }
+                } ?: "인증 발송 중 오류가 발생했습니다. (Error Code: ${response.code()})"
+
+                Result.failure(Exception(errorMessage))
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -180,9 +195,8 @@ class UserRepository @Inject constructor(
                     } catch (e: Exception) {
                         null
                     }
-                } ?: "인증 확인 중 오류가 발생했습니다."
+                } ?: "인증 코드 확인 중 오류가 발생했습니다. (Error Code: ${response.code()})"
 
-                // 실제 서버 메시지를 Exception에 담아 반환
                 Result.failure(Exception(errorMessage))
             }
         } catch (e: Exception) {
@@ -208,9 +222,8 @@ class UserRepository @Inject constructor(
                     } catch (e: Exception) {
                         null
                     }
-                } ?: "회원가입 중 오류가 발생했습니다."
+                } ?: "회원가입 중 오류가 발생했습니다. (Error Code: ${response.code()})"
 
-                // 실제 서버 메시지를 Exception에 담아 반환
                 Result.failure(Exception(errorMessage))
             }
         } catch (e: Exception) {
@@ -243,11 +256,67 @@ class UserRepository @Inject constructor(
                     Result.success(body)
                 }
             } else {
-                Result.failure(Exception("인증 실패: ${response.code()}"))
+                val errorBodyString = response.errorBody()?.string()
+
+                val errorMessage = errorBodyString?.let {
+                    try {
+                        JSONObject(it).getString("message")
+                    } catch (e: Exception) {
+                        null
+                    }
+                } ?: "구글 로그인 중 오류가 발생했습니다. (Error Code: ${response.code()})"
+
+                Result.failure(Exception(errorMessage))
             }
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    /**
+     * [구글 회원가입 재학생 인증]
+     * @param registerToken: 구글에서 받은 회원가입용 token
+     * @param snuEmail: 재학생 인증 이메일
+     * @param code: 인증 코드
+     */
+    suspend fun verifySocialEmailCode(registerToken: String, snuEmail: String, code: String): Result<SocialLoginResponse> {
+        return try {
+            // 소셜 전용 인증 API 호출
+            val response = authApiService.verifySocialEmailCode(
+                SocialVerifyRequest(
+                    registerToken,
+                    snuEmail,
+                    code
+                )
+            )
+            if (response.isSuccessful && response.body() != null) {
+                val body = response.body()!!
+                if (body.type == "REGISTER") {
+                    // 케이스 A: 추가 회원가입이 필요한 상태
+                    // 이메일만 저장하고 회원가입 화면으로
+                    userDataStore.saveEmail(snuEmail)
+                    Result.success(body)
+                } else {
+                    // 케이스 B: 이미 가입된 유저 (로그인 성공)
+                    userDataStore.saveEmail(snuEmail)
+                    userDataStore.saveToken(body.token) // 최종 토큰 저장
+                    Result.success(body)
+                }
+            }
+            else {
+                val errorBodyString = response.errorBody()?.string()
+
+                val errorMessage = errorBodyString?.let {
+                    try {
+                        JSONObject(it).getString("message")
+                    } catch (e: Exception) {
+                        null
+                    }
+                } ?: "재학생 인증 확인 중 오류가 발생했습니다. (Error Code: ${response.code()})"
+
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) { Result.failure(e) }
     }
 
     /**
@@ -269,7 +338,17 @@ class UserRepository @Inject constructor(
 
                 Result.success(body)
             } else {
-                Result.failure(Exception("회원가입 실패 (에러 코드: ${response.code()})"))
+                val errorBodyString = response.errorBody()?.string()
+
+                val errorMessage = errorBodyString?.let {
+                    try {
+                        JSONObject(it).getString("message")
+                    } catch (e: Exception) {
+                        null
+                    }
+                } ?: "구글 회원가입 중 오류가 발생했습니다. (Error Code: ${response.code()})"
+
+                Result.failure(Exception(errorMessage))
             }
         } catch (e: Exception) {
             Result.failure(e)

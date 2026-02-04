@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.toyproject5.repository.UserRepository
 import com.example.toyproject5.dto.SignupRequest
+import com.example.toyproject5.ui.screens.auth.SignupUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,14 +23,7 @@ class SignupViewModel @Inject constructor(
 ) : ViewModel() {
 
     // UI 상태 관리
-    data class SignupUiState(
-        val currentStep: Int = 1,
-        val isLoading: Boolean = false,
-        val isEmailSent: Boolean = false,
-        val isVerified: Boolean = false,
-        val isSignupSuccess: Boolean = false,
-        val errorMessage: String? = null
-    )
+
 
     private val _uiState = MutableStateFlow(SignupUiState())
     val uiState = _uiState.asStateFlow()

@@ -53,7 +53,8 @@ fun LoginScreen(
     viewModel: LoginViewModel = hiltViewModel(),
     onLoginSuccess: () -> Unit,
     onSignupClick: () -> Unit,
-    onNavigateToSignup: (String, String) -> Unit
+    onNavigateToGoogleSignup: (String, String) -> Unit,
+    onNavigateToSocialVerify: (String) -> Unit
 ) {
     val email by viewModel.email.collectAsState()
     val password by viewModel.password.collectAsState()
@@ -95,20 +96,24 @@ fun LoginScreen(
         }
     }
 
-    // 1. 로그인 성공 시 메인으로
-    LaunchedEffect(uiState.isLoginSuccess) {
+    LaunchedEffect(uiState.isLoginSuccess, uiState.isRegisterNeeded) {
         if (uiState.isLoginSuccess) {
+            // 1. 이미 가입된 계정인 경우 메인으로 이동
             onLoginSuccess()
-        }
-    }
+        } else if (uiState.isRegisterNeeded) {
+            // 2. 신규 가입이 필요한 경우 (REGISTER)
+            val email = uiState.email ?: ""
+            val token = uiState.registerToken ?: ""
 
-    // 2. 회원가입 필요 시 가입 화면으로
-    LaunchedEffect(uiState.isRegisterNeeded) {
-        if (uiState.isRegisterNeeded) {
-            // 저장해둔 토큰과 이메일을 가지고 이동!
-            onNavigateToSignup(uiState.registerToken!!, uiState.email!!)
+            if (email.endsWith("@snu.ac.kr")) {
+                // 스누메일이면 바로 구글 가입 페이지로
+                onNavigateToGoogleSignup(token, email)
+            } else {
+                // 스누메일이 아니면 재학생 인증 페이지로
+                onNavigateToSocialVerify(token)
+            }
 
-            // 이동 후에는 상태를 초기화 (뒤로가기 시 중복 방지)
+            // 이동 후 상태 초기화 (필요시 viewModel에 함수 추가)
             viewModel.resetRegisterState()
         }
     }
@@ -116,11 +121,9 @@ fun LoginScreen(
     // 3. 에러 발생 시 (4004 포함) 스낵바 출력 및 구글 로그아웃
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let { msg ->
-            // 서버에서 온 "서울대 이메일(@snu.ac.kr)만 가입 가능합니다." 메시지가 뜹니다.
+            // 서버에서 온 메시지가 띄우기
             snackbarHostState.showSnackbar(msg)
 
-            // 서버에서 거절당했으므로 구글 세션을 끊어줘야
-            // 다음에 버튼을 눌렀을 때 계정 선택창이 다시 뜹니다.
             googleSignInClient.signOut()
 
             viewModel.clearErrorMessage()

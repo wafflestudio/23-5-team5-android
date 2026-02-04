@@ -76,19 +76,21 @@ class LoginViewModel @Inject constructor(
             val result = userRepository.handleGoogleAuth(idToken, email)
 
             result.onSuccess { response ->
-                if (response.type == "REGISTER") {
+                if (response.type == "LOGIN") {
+                    // 기존 유저: 로그인 성공 상태로 업데이트
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            isLoginSuccess = true
+                        )
+                    }
+                }else if (response.type == "REGISTER") {
                     // 신규 유저: 가입 필요한 상태로 업데이트
                     _uiState.update { it.copy(
                         isLoading = false,
                         isRegisterNeeded = true,
                         registerToken = response.token,
                         email = email
-                    ) }
-                } else {
-                    // 기존 유저: 로그인 성공 상태로 업데이트
-                    _uiState.update { it.copy(
-                        isLoading = false,
-                        isLoginSuccess = true
                     ) }
                 }
             }.onFailure { exception ->

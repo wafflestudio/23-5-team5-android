@@ -22,6 +22,7 @@ import com.example.toyproject5.ui.screens.auth.SplashScreen
 import com.example.toyproject5.viewmodel.AuthViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import com.example.toyproject5.ui.screens.auth.GoogleSignupScreen
+import com.example.toyproject5.ui.screens.auth.SocialVerifyScreen
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -66,8 +67,12 @@ class MainActivity : ComponentActivity() {
                             },
                             onSignupClick = { rootNavController.navigate(NavRoute.Signup.route) },
                             // registerToken과 email을 가지고 구글 전용 가입 화면으로 이동
-                            onNavigateToSignup = { registerToken, email ->
+                            onNavigateToGoogleSignup = { registerToken, email ->
                                 rootNavController.navigate(NavRoute.GoogleSignup.createRoute(registerToken, email))
+                            },
+                            // token을 가지고 소셜 재학생 인증 화면으로 이동
+                            onNavigateToSocialVerify = { registerToken ->
+                                rootNavController.navigate(NavRoute.SocialVerify.createRoute(registerToken))
                             }
                         )
                     }
@@ -76,6 +81,27 @@ class MainActivity : ComponentActivity() {
                     composable(NavRoute.Signup.route) {
                         SignupScreen(
                             onSignupComplete = { rootNavController.popBackStack() }
+                        )
+                    }
+
+                    // 소셜 재학생 인증 화면
+                    composable(
+                        route = NavRoute.SocialVerify.route,
+                        arguments = listOf(navArgument("token") { type = NavType.StringType })
+                    ) {
+                        val token = it.arguments?.getString("token") ?: ""
+                        SocialVerifyScreen(
+                            onVerificationSuccess = { response, verifiedEmail ->
+                                if (response.type == "LOGIN") {
+                                    // 이미 가입된 메일이라면 즉시 메인 화면으로 이동
+                                    rootNavController.navigate(NavRoute.Main.route) {
+                                        popUpTo(NavRoute.Login.route) { inclusive = true }
+                                    }
+                                } else {
+                                    // 가입되지 않은 메일(REGISTER)이라면 회원가입 페이지로 이동
+                                    rootNavController.navigate(NavRoute.GoogleSignup.createRoute(token, verifiedEmail))
+                                }
+                            }
                         )
                     }
 
