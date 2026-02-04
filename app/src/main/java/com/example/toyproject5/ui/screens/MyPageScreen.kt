@@ -67,6 +67,17 @@ fun MyPageScreen(pingViewModel: PingViewModel = hiltViewModel(),
         }
     }
 
+    // [추가] SharedFlow 이벤트 구독 (토스트 등)
+    LaunchedEffect(Unit) {
+        myPageViewModel.eventFlow.collect { event ->
+            when (event) {
+                is MyPageViewModel.MyPageEvent.ShowToast -> {
+                    android.widget.Toast.makeText(context, event.message, android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
     Scaffold(
         topBar = { MyPageHeader() }
     ) { innerPadding ->

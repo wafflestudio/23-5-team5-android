@@ -92,7 +92,7 @@ class UserRepository @Inject constructor(
             if (response.isSuccessful && response.body() != null) {
                 val updatedData = response.body()!!
 
-                // TODO: 현재 예시에서는 닉네임만 저장하고 있지만, major 등도 저장
+                userDataStore.saveNickname(updatedData.nickname)
                 updatedData.major?.let { userDataStore.saveMajor(it) }
                 updatedData.bio?.let { userDataStore.saveBio(it) }
                 updatedData.profileImageUrl?.let { userDataStore.saveProfileImage(it) }
