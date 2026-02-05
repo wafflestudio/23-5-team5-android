@@ -11,12 +11,12 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -54,6 +54,17 @@ class GroupViewModel @Inject constructor(
     private var isLastPage = false
     private val pageSize = 10
     private var searchJob: Job? = null
+
+    init {
+        fetchUserInfo()
+        fetchJoinedGroups()
+    }
+
+    private fun fetchUserInfo() {
+        viewModelScope.launch {
+            userRepository.fetchMyInfo()
+        }
+    }
 
     fun selectGroup(group: GroupResponse) {
         _selectedGroup.value = group
@@ -104,7 +115,7 @@ class GroupViewModel @Inject constructor(
                 if (response.isSuccessful) {
                     val searchResponse = response.body()
                     val newGroups = searchResponse?.content ?: emptyList()
-                    
+
                     if (isRefresh) {
                         _groups.value = newGroups
                     } else {
@@ -115,7 +126,7 @@ class GroupViewModel @Inject constructor(
                         }
                         _groups.value = currentList + filteredNewGroups
                     }
-                    
+
                     isLastPage = searchResponse?.last ?: true
                     if (!isLastPage) {
                         currentPage++

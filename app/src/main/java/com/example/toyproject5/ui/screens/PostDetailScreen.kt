@@ -100,11 +100,12 @@ fun PostDetailScreen(
                     },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
-                    enabled = !isClosed || isJoined, // Allow withdrawing even if closed
+                    enabled = !isClosed && !isMyPost || isJoined, // Allow withdrawing even if closed
                     colors = ButtonDefaults.buttonColors(
                         containerColor = when {
                             isJoined -> Color(0xFFEF4444) // Red for withdraw
                             isClosed -> Color.Gray
+                            isMyPost -> Color.Gray
                             else -> Color(0xFF155DFC)
                         }
                     )
