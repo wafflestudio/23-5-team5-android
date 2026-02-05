@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -15,14 +16,23 @@ class UserPreferences @Inject constructor(
     private val dataStore: DataStore<Preferences>
 ) {
     private companion object {
+        val USER_ID_KEY = longPreferencesKey("user_id")
         val NICKNAME_KEY = stringPreferencesKey("user_nickname")
         val PROFILE_IMAGE_KEY = stringPreferencesKey("profile_image_uri")
         val TOKEN_KEY = stringPreferencesKey("user_token")
         val EMAIL_KEY = stringPreferencesKey("user_email")
         val MAJOR_KEY = stringPreferencesKey("user_major")
         val BIO_KEY = stringPreferencesKey("user_bio")
-
     }
+
+    // 로컬 저장소에서 실시간으로 유저 ID를 읽어옴
+    val userIdFlow: Flow<Long?> = dataStore.data
+        .catch { exception ->
+            if (exception is IOException) emit(emptyPreferences()) else throw exception
+        }
+        .map { preferences ->
+            preferences[USER_ID_KEY]
+        }
 
     // 로컬 저장소에서 실시간으로 닉네임을 읽어옴
     val nicknameFlow: Flow<String> = dataStore.data
@@ -75,6 +85,13 @@ class UserPreferences @Inject constructor(
         }
         .map { preferences -> preferences[BIO_KEY] }
 
+    // 유저 ID 저장
+    suspend fun saveUserId(userId: Long) {
+        dataStore.edit { preferences ->
+            preferences[USER_ID_KEY] = userId
+        }
+    }
+
     // 사용자가 입력한 새로운 닉네임을 저장소에 기록함
     suspend fun saveNickname(newNickname: String) {
         dataStore.edit { preferences ->
@@ -123,6 +140,4 @@ class UserPreferences @Inject constructor(
             preferences.clear()
         }
     }
-
-
 }

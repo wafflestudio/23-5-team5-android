@@ -29,6 +29,7 @@ class UserRepository @Inject constructor(
 ) {
     // 개인정보
     // 읽기: DataStore에서 흘러나오는 흐름을 그대로 노출
+    val userId: Flow<Long?> = userDataStore.userIdFlow
     val nickname: Flow<String> = userDataStore.nicknameFlow
     val email: Flow<String> = userDataStore.emailFlow
     val major: Flow<String?> = userDataStore.majorFlow
@@ -57,6 +58,7 @@ class UserRepository @Inject constructor(
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {
+                    userDataStore.saveUserId(body.userId)
                     userDataStore.saveNickname(body.nickname)
                     body.profileImageUrl?.let { userDataStore.saveProfileImage(it) }
                     body.major?.let { userDataStore.saveMajor(it) }
@@ -102,6 +104,7 @@ class UserRepository @Inject constructor(
             if (response.isSuccessful && response.body() != null) {
                 val updatedData = response.body()!!
 
+                userDataStore.saveUserId(updatedData.userId)
                 userDataStore.saveNickname(updatedData.nickname)
                 updatedData.major?.let { userDataStore.saveMajor(it) }
                 updatedData.bio?.let { userDataStore.saveBio(it) }

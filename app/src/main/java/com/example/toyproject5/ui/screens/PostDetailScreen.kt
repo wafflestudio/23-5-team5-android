@@ -37,6 +37,7 @@ fun PostDetailScreen(
 ) {
     val post by viewModel.selectedGroup.collectAsState()
     val joinedGroups by viewModel.joinedGroups.collectAsState()
+    val currentUserId by viewModel.currentUserId.collectAsState()
     val context = LocalContext.current
 
     // Initialize data
@@ -61,6 +62,7 @@ fun PostDetailScreen(
     val currentPost = post!!
     val isClosed = currentPost.status != "RECRUITING"
     val isJoined = joinedGroups.any { it.id == currentPost.id }
+    val isMyPost = currentUserId != null && currentPost.leaderId.toLong() == currentUserId
     
     val categoryName = when (currentPost.categoryId) {
         1 -> "스터디"
@@ -111,6 +113,7 @@ fun PostDetailScreen(
                         text = when {
                             isJoined -> "나가기"
                             isClosed -> "모집 마감"
+                            isMyPost -> "내가 작성한 글"
                             else -> "참여하기"
                         },
                         fontWeight = FontWeight.Bold, 
