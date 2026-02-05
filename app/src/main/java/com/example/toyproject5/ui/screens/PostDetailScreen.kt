@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -37,6 +38,14 @@ fun PostDetailScreen(
     val post by viewModel.selectedGroup.collectAsState()
     val currentUserId by viewModel.currentUserId.collectAsState()
     val context = LocalContext.current
+
+    // ViewModel의 toastEvent를 관찰
+    LaunchedEffect(Unit) {
+        viewModel.toastEvent.collect { message ->
+            // SharedFlow에서 메시지가 emit(발행)될 때마다 이 블록이 실행됩니다.
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
+    }
 
     if (post == null) {
         // In case of direct navigation or process death, we might want to fetch it
@@ -78,10 +87,8 @@ fun PostDetailScreen(
                     .padding(16.dp)
             ) {
                 Button(
-                    onClick = { 
-                        viewModel.joinGroup(currentPost.id) {
-                            Toast.makeText(context, "참여 신청이 완료되었습니다.", Toast.LENGTH_SHORT).show()
-                        }
+                    onClick = {
+                        viewModel.joinGroup(currentPost.id)
                     },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),

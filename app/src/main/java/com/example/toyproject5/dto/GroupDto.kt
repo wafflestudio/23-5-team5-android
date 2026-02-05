@@ -26,7 +26,7 @@ data class GroupIdRequest(
  * Request DTO for joining/withdrawing from a group
  */
 data class GroupJoinRequest(
-    @SerializedName("groupId") val groupId: Int
+    @SerializedName("group_id") val groupId: Int
 )
 
 /**
@@ -56,4 +56,13 @@ data class GroupSearchResponse(
     @SerializedName("last") val last: Boolean,
     @SerializedName("number") val number: Int,
     @SerializedName("size") val size: Int
+)
+
+data class ErrorResponse(
+    @SerializedName("error_code")
+    val errorCode: Int,
+    @SerializedName("message")
+    val message: String,
+    @SerializedName("timestamp")
+    val timestamp: String
 )

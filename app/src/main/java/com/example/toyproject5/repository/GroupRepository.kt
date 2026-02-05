@@ -44,4 +44,11 @@ class GroupRepository @Inject constructor(
         sort: String? = null
     ): Response<GroupSearchResponse> =
         apiService.searchMyGroups(page, size, sort)
+
+    suspend fun searchJoinedGroups(
+        page: Int? = null,
+        size: Int? = null,
+        sort: String? = null
+    ): Response<GroupSearchResponse> =
+        apiService.searchJoinedGroups(page, size, sort)
 }

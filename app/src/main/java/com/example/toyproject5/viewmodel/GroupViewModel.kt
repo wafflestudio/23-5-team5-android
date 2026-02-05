@@ -2,15 +2,19 @@ package com.example.toyproject5.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.toyproject5.dto.ErrorResponse
 import com.example.toyproject5.dto.GroupCreateRequest
 import com.example.toyproject5.dto.GroupResponse
 import com.example.toyproject5.repository.GroupRepository
 import com.example.toyproject5.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -148,18 +152,39 @@ class GroupViewModel @Inject constructor(
         }
     }
 
+    // [추가] Toast 메시지처럼 일회성 이벤트를 위한 Flow입니다.
+    private val _toastEvent = MutableSharedFlow<String>()
+    val toastEvent: SharedFlow<String> = _toastEvent.asSharedFlow()
+
     fun joinGroup(groupId: Int, onSuccess: () -> Unit = {}) {
         viewModelScope.launch {
             try {
                 val response = repository.joinGroup(groupId)
                 if (response.isSuccessful) {
+                    _toastEvent.emit("참여 신청이 완료되었습니다.")
                     onSuccess()
                     fetchMyGroups()
                 } else {
-                    _error.value = "Failed to join group"
+                    val errorBodyString = response.errorBody()?.string()
+
+                    val finalMessage = if (!errorBodyString.isNullOrBlank()) {
+                        try {
+                            // Gson을 이용해 JSON 문자열을 ErrorResponse 객체로 변환
+                            val gson = com.google.gson.Gson()
+                            val errorData = gson.fromJson(errorBodyString, ErrorResponse::class.java)
+                            errorData.message // "이미 가입한 그룹입니다." 추출
+                        } catch (e: Exception) {
+                            "에러 메시지 분석 중 오류가 발생했습니다."
+                        }
+                    } else {
+                        "가입 실패 (코드: ${response.code()})"
+                    }
+
+                    _toastEvent.emit(finalMessage)
                 }
             } catch (e: Exception) {
                 _error.value = e.localizedMessage
+                _toastEvent.emit("네트워크 오류가 발생했습니다: ${e.localizedMessage}")
             }
         }
     }
