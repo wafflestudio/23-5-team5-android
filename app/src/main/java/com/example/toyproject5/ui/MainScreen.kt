@@ -36,6 +36,7 @@ fun MainScreen(onLogout: () -> Unit) {
     // 상세 페이지 및 작성 페이지에서는 바텀바를 숨깁니다.
     val showBottomBar = currentRoute in listOf(
         NavRoute.Recruitment.route,
+        NavRoute.MyJoinedGroups.route,
         NavRoute.MyPost.route,
         NavRoute.MyPage.route
     )
@@ -64,6 +65,16 @@ fun MainScreen(onLogout: () -> Unit) {
                     viewModel = groupViewModel
                 )
             }
+            
+            composable(NavRoute.MyJoinedGroups.route) {
+                MyJoinedGroupsScreen(
+                    onPostClick = { group ->
+                        groupViewModel.selectGroup(group)
+                        navController.navigate(NavRoute.PostDetail.createRoute(group.id.toString()))
+                    }
+                )
+            }
+
             composable(NavRoute.MyPost.route) {
                 MyPostScreen(
                     onPostClick = { groupId ->
@@ -116,7 +127,12 @@ fun MainScreen(onLogout: () -> Unit) {
 
 @Composable
 fun BottomBar(navController: NavHostController) {
-    val items = listOf(NavRoute.Recruitment, NavRoute.MyPost, NavRoute.MyPage)
+    val items = listOf(
+        NavRoute.Recruitment,
+        NavRoute.MyJoinedGroups,
+        NavRoute.MyPost,
+        NavRoute.MyPage
+    )
 
     NavigationBar {
         val navBackStackEntry by navController.currentBackStackEntryAsState()
