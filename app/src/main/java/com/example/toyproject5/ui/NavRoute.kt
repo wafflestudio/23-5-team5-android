@@ -13,7 +13,18 @@ sealed class NavRoute(val route: String, val title: String = "", val icon: Image
 
     object Login : NavRoute("login", "로그인", Icons.Default.Home)
 
-    object Signup : NavRoute("signup", "회원가입", Icons.Default.List)
+    object Signup : NavRoute("signup", "회원가입", Icons.Default.List) // 일반 회원가입
+
+
+    //소셜 재학생 인증
+    object SocialVerify : NavRoute("social_verify/{token}") {
+        fun createRoute(token: String) = "social_verify/$token"
+    }
+
+    // 구글 회원가입
+    object GoogleSignup : NavRoute("google_signup/{token}/{email}") {
+        fun createRoute(token: String, email: String) = "google_signup/$token/$email"
+    }
 
     // Main Route (MainScreen)
     object Main : NavRoute("main", "메인", Icons.Default.Home)

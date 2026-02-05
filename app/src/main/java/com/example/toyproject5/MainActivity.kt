@@ -3,10 +3,14 @@ package com.example.toyproject5
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -15,62 +19,122 @@ import com.example.toyproject5.ui.NavRoute
 import com.example.toyproject5.ui.screens.auth.LoginScreen
 import com.example.toyproject5.ui.screens.auth.SignupScreen
 import com.example.toyproject5.ui.screens.auth.SplashScreen
+import com.example.toyproject5.viewmodel.AuthViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import com.example.toyproject5.ui.screens.auth.GoogleSignupScreen
+import com.example.toyproject5.ui.screens.auth.SocialVerifyScreen
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    private val authViewModel: AuthViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+            // 로그인 여부를 가져옴
+            val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
             val rootNavController = rememberNavController()
 
-            NavHost(
-                navController = rootNavController,
-                startDestination = NavRoute.Splash.route
-            ) {
-                //  Splash 화면 추가
-                composable(NavRoute.Splash.route) {
-                    SplashScreen(
-                        onNavigateToMain = {
-                            rootNavController.navigate(NavRoute.Main.route) {
-                                // 뒤로 가기 눌렀을 때 다시 Splash가 안 나오게 스택에서 제거
-                                popUpTo(NavRoute.Splash.route) { inclusive = true }
+            if (isLoggedIn != null) {
+                NavHost(
+                    navController = rootNavController,
+                    startDestination = NavRoute.Splash.route
+                ) {
+                    //  Splash 화면 추가
+                    composable(NavRoute.Splash.route) {
+                        SplashScreen(
+                            onNavigateToMain = {
+                                rootNavController.navigate(NavRoute.Main.route) {
+                                    // 뒤로 가기 눌렀을 때 다시 Splash가 안 나오게 스택에서 제거
+                                    popUpTo(NavRoute.Splash.route) { inclusive = true }
+                                }
+                            },
+                            onNavigateToLogin = {
+                                rootNavController.navigate(NavRoute.Login.route) {
+                                    popUpTo(NavRoute.Splash.route) { inclusive = true }
+                                }
                             }
-                        },
-                        onNavigateToLogin = {
+                        )
+                    }
+
+                    // 로그인 화면
+                    composable(NavRoute.Login.route) {
+                        LoginScreen(
+                            onLoginSuccess = {
+                                rootNavController.navigate(NavRoute.Main.route) {
+                                    popUpTo(NavRoute.Login.route) { inclusive = true }
+                                }
+                            },
+                            onSignupClick = { rootNavController.navigate(NavRoute.Signup.route) },
+                            // registerToken과 email을 가지고 구글 전용 가입 화면으로 이동
+                            onNavigateToGoogleSignup = { registerToken, email ->
+                                rootNavController.navigate(NavRoute.GoogleSignup.createRoute(registerToken, email))
+                            },
+                            // token을 가지고 소셜 재학생 인증 화면으로 이동
+                            onNavigateToSocialVerify = { registerToken ->
+                                rootNavController.navigate(NavRoute.SocialVerify.createRoute(registerToken))
+                            }
+                        )
+                    }
+
+                    // 회원가입 화면
+                    composable(NavRoute.Signup.route) {
+                        SignupScreen(
+                            onSignupComplete = { rootNavController.popBackStack() }
+                        )
+                    }
+
+                    // 소셜 재학생 인증 화면
+                    composable(
+                        route = NavRoute.SocialVerify.route,
+                        arguments = listOf(navArgument("token") { type = NavType.StringType })
+                    ) {
+                        val token = it.arguments?.getString("token") ?: ""
+                        SocialVerifyScreen(
+                            onVerificationSuccess = { response, verifiedEmail ->
+                                if (response.type == "LOGIN") {
+                                    // 이미 가입된 메일이라면 즉시 메인 화면으로 이동
+                                    rootNavController.navigate(NavRoute.Main.route) {
+                                        popUpTo(NavRoute.Login.route) { inclusive = true }
+                                    }
+                                } else {
+                                    // 가입되지 않은 메일(REGISTER)이라면 회원가입 페이지로 이동
+                                    rootNavController.navigate(NavRoute.GoogleSignup.createRoute(token, verifiedEmail))
+                                }
+                            }
+                        )
+                    }
+
+                    //구글 회원가입 화면
+                    composable(
+                        route = NavRoute.GoogleSignup.route,
+                        arguments = listOf(
+                            navArgument("token") { type = NavType.StringType },
+                            navArgument("email") { type = NavType.StringType }
+                        )
+                    ) { backStackEntry ->
+                        val token = backStackEntry.arguments?.getString("token") ?: ""
+                        val email = backStackEntry.arguments?.getString("email") ?: ""
+
+                        GoogleSignupScreen(
+                            registerToken = token,
+                            email = email,
+                            onSignupSuccess = {
+                                rootNavController.navigate(NavRoute.Main.route) {
+                                    popUpTo(NavRoute.Login.route) { inclusive = true }
+                                }
+                            }
+                        )
+                    }
+
+                    // 메인 화면
+                    composable(NavRoute.Main.route) {
+                        MainScreen(onLogout = {
                             rootNavController.navigate(NavRoute.Login.route) {
-                                popUpTo(NavRoute.Splash.route) { inclusive = true }
+                                popUpTo(0) { inclusive = true }
                             }
-                        }
-                    )
-                }
-
-                // 로그인 화면
-                composable(NavRoute.Login.route) {
-                    LoginScreen(
-                        onLoginSuccess = {
-                            rootNavController.navigate(NavRoute.Main.route) {
-                                popUpTo(NavRoute.Login.route) { inclusive = true }
-                            }
-                        },
-                        onSignupClick = { rootNavController.navigate(NavRoute.Signup.route) }
-                    )
-                }
-
-                // 회원가입 화면
-                composable(NavRoute.Signup.route) {
-                    SignupScreen(
-                        onSignupComplete = { rootNavController.popBackStack() }
-                    )
-                }
-
-                // 메인 화면 (기존에 작성하신 MainScreen)
-                composable(NavRoute.Main.route) {
-                    MainScreen(onLogout = {
-                        rootNavController.navigate(NavRoute.Login.route) {
-                            popUpTo(0) { inclusive = true }
-                        }
-                    })
+                        })
+                    }
                 }
             }
         }
