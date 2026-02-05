@@ -33,6 +33,7 @@ fun CreatePostScreen(
     var capacity by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
+    var isOnline by remember { mutableStateOf(false) }
 
     val categories = listOf("스터디", "고시", "취준", "대외활동")
 
@@ -126,6 +127,30 @@ fun CreatePostScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Online/Offline Selection
+            Text(
+                text = "진행 방식",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CategoryButton(
+                    text = "온라인",
+                    isSelected = isOnline,
+                    onClick = { isOnline = true },
+                    modifier = Modifier.weight(1f)
+                )
+                CategoryButton(
+                    text = "오프라인",
+                    isSelected = !isOnline,
+                    onClick = { isOnline = false },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             InputField(
                 label = "장소",
                 value = location,
@@ -186,7 +211,7 @@ fun CreatePostScreen(
                                 },
                                 subCategoryId = 1,
                                 capacity = capacity.toIntOrNull(),
-                                isOnline = location.contains("온라인", ignoreCase = true) || location.contains("online", ignoreCase = true),
+                                isOnline = isOnline,
                                 location = location
                             )
                             viewModel.createGroup(request) {
