@@ -11,18 +11,28 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.toyproject5.data.mockPosts
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.toyproject5.viewmodel.ParticipantsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ParticipantsScreen(postId: String, onBack: () -> Unit) {
-    val post = mockPosts.find { it.id == postId } ?: return
+fun ParticipantsScreen(groupId: Int, groupName: String, onBack: () -> Unit, viewModel: ParticipantsViewModel = hiltViewModel()) {
+
+    LaunchedEffect(groupId) {
+        viewModel.fetchParticipants(groupId)
+    }
+
+    val participants by viewModel.participants.collectAsState()
+    val error by viewModel.error.collectAsState()
 
     Scaffold(
         topBar = {
@@ -51,20 +61,26 @@ fun ParticipantsScreen(postId: String, onBack: () -> Unit) {
                     .padding(16.dp)
             ) {
                 Text(
-                    text = post.title,
+                    text = groupName,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF0A0A0A)
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "총 ${post.participants.size}명의 신청자",
+                    text = "총 ${participants.size}명의 신청자",
                     fontSize = 14.sp,
                     color = Color(0xFF6A7282)
                 )
             }
 
-            if (post.participants.isEmpty()) {
+            error?.let {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(text = it, color = Color.Red)
+                }
+            }
+
+            if (participants.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(text = "아직 신청자가 없습니다.", color = Color.Gray)
                 }
@@ -74,10 +90,10 @@ fun ParticipantsScreen(postId: String, onBack: () -> Unit) {
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(post.participants) { participant ->
+                    items(participants) { participant ->
                         ParticipantItem(
                             nickname = participant.nickname,
-                            email = participant.email
+                            email = participant.username
                         )
                     }
                 }
@@ -115,5 +131,3 @@ fun ParticipantItem(nickname: String, email: String) {
         }
     }
 }
-
-

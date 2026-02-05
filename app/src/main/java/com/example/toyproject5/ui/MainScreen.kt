@@ -8,6 +8,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -70,6 +71,7 @@ fun MainScreen(onLogout: () -> Unit) {
                         navController.navigate(NavRoute.PostDetail.createRoute(groupId.toString()))
                     },
                     onParticipantsClick = { postId ->
+                        groupViewModel.selectGroupById(postId)
                         navController.navigate(NavRoute.Participants.createRoute(postId.toString()))
                     },
                     viewModel = groupViewModel
@@ -101,7 +103,12 @@ fun MainScreen(onLogout: () -> Unit) {
                 arguments = listOf(navArgument("postId") { type = NavType.StringType })
             ) { backStackEntry ->
                 val postId = backStackEntry.arguments?.getString("postId") ?: return@composable
-                ParticipantsScreen(postId = postId, onBack = { navController.popBackStack() })
+                val selectedGroup by groupViewModel.selectedGroup.collectAsState()
+                ParticipantsScreen(
+                    groupId = postId.toInt(),
+                    groupName = selectedGroup?.groupName ?: "참여 신청자",
+                    onBack = { navController.popBackStack() }
+                )
             }
         }
     }

@@ -5,7 +5,7 @@
 - **Base URL**: `http://43.203.97.212:8080`
 - **Version**: 1.0
 - **Content-Type**: `application/json` (except for file upload endpoints)
-- **Date**: 2026-02-01
+- **Date**: 2026-02-05
 
 ---
 
@@ -19,7 +19,8 @@
 6. [Group Management](#group-management)
 7. [User-Group Operations](#user-group-operations)
 8. [Search](#search)
-9. [Error Handling](#error-handling)
+9. [Review Management](#review-management)
+10. [Error Handling](#error-handling)
 
 ---
 
@@ -126,7 +127,23 @@ Authenticate an existing user.
 
 ---
 
-### 3. Get Profile
+### 3. Logout
+
+Invalidate the current access token.
+
+- **Endpoint**: `POST /api/auth/logout`
+- **Authentication**: Required (JWT)
+- **Content-Type**: `application/json`
+
+#### Response: `200 OK`
+
+```
+로그아웃 되었습니다.
+```
+
+---
+
+### 4. Get Profile
 
 Retrieve the authenticated user's profile information.
 
@@ -152,7 +169,7 @@ Retrieve the authenticated user's profile information.
 
 ---
 
-### 4. Update Profile
+### 5. Update Profile
 
 Update the authenticated user's profile information.
 
@@ -187,7 +204,7 @@ Update the authenticated user's profile information.
 
 ---
 
-### 5. Update Profile Image
+### 6. Update Profile Image
 
 Update only the profile image.
 
@@ -212,7 +229,7 @@ Update only the profile image.
 
 ---
 
-### 6. Get Profile Image
+### 7. Get Profile Image
 
 Get a redirect to the profile image URL.
 
@@ -456,10 +473,25 @@ Create a new study group.
 | is_online       | boolean | Yes      | Whether the group is online or offline          |
 | location        | string  | Yes      | Location (for offline) or platform (for online) |
 
-#### Response: `200 OK`
+#### Response: `201 Created`
 
-```
-(Empty response body)
+```json
+{
+  "id": 1,
+  "groupName": "Algorithm Study",
+  "description": "Weekly algorithm problem solving",
+  "categoryId": 1,
+  "subCategoryId": 2,
+  "capacity": 10,
+  "leaderId": 5,
+  "leaderNickname": "John",
+  "leaderBio": "Backend developer",
+  "leaderUserName": "john@snu.ac.kr",
+  "isOnline": true,
+  "location": "Zoom",
+  "status": "RECRUITING",
+  "createdAt": "2026-01-25T10:30:00Z"
+}
 ```
 
 ---
@@ -486,8 +518,10 @@ Delete a study group. Only the group leader can delete.
 
 #### Response: `200 OK`
 
-```
-(Empty response body)
+```json
+{
+  "deletedId": 1
+}
 ```
 
 ---
@@ -514,8 +548,10 @@ Mark a group as expired (close recruitment). Only the group leader can expire.
 
 #### Response: `200 OK`
 
-```
-(Empty response body)
+```json
+{
+  "expiredId": 1
+}
 ```
 
 ---
@@ -582,7 +618,7 @@ Leave a study group.
 
 ### 1. Search Groups
 
-Search for study groups by category and/or keyword.
+Search for study groups by category, subcategory, and/or keyword using cursor-based pagination.
 
 - **Endpoint**: `GET /api/groups/search`
 - **Authentication**: Not required
@@ -590,42 +626,68 @@ Search for study groups by category and/or keyword.
 
 #### Query Parameters
 
-| Parameter  | Type   | Required | Description           |
-| ---------- | ------ | -------- | --------------------- |
-| categoryId | number | No       | Filter by category ID |
-| keyword    | string | No       | Search keyword        |
+| Parameter     | Type   | Required | Description                                             |
+| ------------- | ------ | -------- | ------------------------------------------------------- |
+| categoryId    | number | No       | Filter by main category ID                              |
+| subCategoryId | number | No       | Filter by sub-category ID                               |
+| keyword       | string | No       | Search keyword (searches in group name and description) |
+| cursorId      | number | No       | Last item ID from previous page (null for first page)   |
+| size          | number | No       | Number of items per page (1-50, default: 10)            |
 
 #### Example Request
 
 ```
-GET /groups/search?categoryId=1&keyword=algorithm
+GET /groups/search?categoryId=1&keyword=algorithm&cursorId=null&size=10
 ```
 
 #### Response: `200 OK`
 
 ```json
-[
-  {
-    "id": 1,
-    "groupName": "Algorithm Study",
-    "description": "Weekly algorithm problem solving",
-    "categoryId": 1,
-    "subCategoryId": 2,
-    "capacity": 10,
-    "leaderId": 5,
-    "isOnline": true,
-    "location": "Zoom",
-    "status": "RECRUITING",
-    "createdAt": "2026-01-25T10:30:00Z"
-  }
-]
+{
+  "content": [
+    {
+      "id": 125,
+      "groupName": "Algorithm Study",
+      "description": "Weekly algorithm problem solving",
+      "categoryId": 1,
+      "subCategoryId": 2,
+      "capacity": 10,
+      "leaderId": 5,
+      "leaderNickname": "John",
+      "leaderBio": "Backend developer",
+      "leaderUserName": "john@snu.ac.kr",
+      "isOnline": true,
+      "location": "Zoom",
+      "status": "RECRUITING",
+      "createdAt": "2026-01-25T10:30:00Z"
+    },
+    {
+      "id": 122,
+      "groupName": "Data Structures Study",
+      "description": "Deep dive into data structures",
+      "categoryId": 1,
+      "subCategoryId": 2,
+      "capacity": 8,
+      "leaderId": 12,
+      "leaderNickname": "Jane",
+      "leaderBio": "CS student",
+      "leaderUserName": "jane@snu.ac.kr",
+      "isOnline": false,
+      "location": "Seoul Campus",
+      "status": "RECRUITING",
+      "createdAt": "2026-01-24T15:20:00Z"
+    }
+  ],
+  "nextCursorId": 122,
+  "hasNext": true
+}
 ```
 
 ---
 
-### 2. Search My Groups
+### 2. Search My Created Groups
 
-Get all groups the authenticated user has joined or created with pagination support.
+Get all groups created by the authenticated user (groups where user is the leader) using cursor-based pagination.
 
 - **Endpoint**: `GET /api/groups/search/me`
 - **Authentication**: Required (JWT)
@@ -633,11 +695,305 @@ Get all groups the authenticated user has joined or created with pagination supp
 
 #### Query Parameters
 
-| Parameter | Type   | Required | Description                         |
-| --------- | ------ | -------- | ----------------------------------- |
-| page      | number | No       | Page number (0-indexed, default: 0) |
-| size      | number | No       | Page size (default: 10)             |
-| sort      | string | No       | Sort field (default: createdAt)     |
+| Parameter | Type   | Required | Description                                           |
+| --------- | ------ | -------- | ----------------------------------------------------- |
+| cursorId  | number | No       | Last item ID from previous page (null for first page) |
+| size      | number | No       | Number of items per page (1-50, default: 10)          |
+
+#### Response: `200 OK`
+
+```json
+{
+  "content": [
+    {
+      "id": 150,
+      "groupName": "Kotlin Mastery",
+      "description": "Deep dive into Kotlin coroutines",
+      "categoryId": 1,
+      "subCategoryId": 11,
+      "capacity": 5,
+      "leaderId": 501,
+      "leaderNickname": "MyNickname",
+      "leaderBio": "Backend developer",
+      "leaderUserName": "me@snu.ac.kr",
+      "isOnline": true,
+      "location": "Google Meet",
+      "status": "RECRUITING",
+      "createdAt": "2026-02-01T14:00:00Z"
+    },
+    {
+      "id": 142,
+      "groupName": "Daily Algorithm Practice",
+      "description": "Daily leetcode problems",
+      "categoryId": 1,
+      "subCategoryId": 15,
+      "capacity": 8,
+      "leaderId": 501,
+      "leaderNickname": "MyNickname",
+      "leaderBio": "Backend developer",
+      "leaderUserName": "me@snu.ac.kr",
+      "isOnline": true,
+      "location": "Slack/Github",
+      "status": "RECRUITING",
+      "createdAt": "2026-01-20T09:00:00Z"
+    }
+  ],
+  "nextCursorId": 142,
+  "hasNext": false
+}
+```
+
+---
+
+### 3. Search My Joined Groups
+
+Get all groups the authenticated user has joined as a member (not as a leader) using cursor-based pagination.
+
+- **Endpoint**: `GET /api/groups/search/joined`
+- **Authentication**: Required (JWT)
+- **Content-Type**: `application/json`
+
+#### Query Parameters
+
+| Parameter | Type   | Required | Description                                           |
+| --------- | ------ | -------- | ----------------------------------------------------- |
+| cursorId  | number | No       | Last item ID from previous page (null for first page) |
+| size      | number | No       | Number of items per page (1-50, default: 10)          |
+
+#### Response: `200 OK`
+
+```json
+{
+  "content": [
+    {
+      "id": 125,
+      "groupName": "Backend Study",
+      "description": "Clean architecture and TDD",
+      "categoryId": 1,
+      "subCategoryId": 11,
+      "capacity": 6,
+      "leaderId": 501,
+      "leaderNickname": "TeamLeader",
+      "leaderBio": "Senior developer",
+      "leaderUserName": "leader@snu.ac.kr",
+      "isOnline": false,
+      "location": "Gangnam Station Cafe",
+      "status": "RECRUITING",
+      "createdAt": "2026-02-01T10:00:00Z"
+    },
+    {
+      "id": 119,
+      "groupName": "Real Estate Investment Study",
+      "description": "Real estate auction analysis",
+      "categoryId": 3,
+      "subCategoryId": 35,
+      "capacity": 10,
+      "leaderId": 44,
+      "leaderNickname": "PropertyExpert",
+      "leaderBio": "Investment professional",
+      "leaderUserName": "expert@snu.ac.kr",
+      "isOnline": false,
+      "location": "Bundang, Seongnam",
+      "status": "EXPIRED",
+      "createdAt": "2026-01-25T09:00:00Z"
+    }
+  ],
+  "nextCursorId": 119,
+  "hasNext": true
+}
+```
+
+---
+
+### 4. Search Users In Group
+
+Get all users participating in a specific study group using cursor-based pagination.
+
+- **Endpoint**: `GET /api/users/search`
+- **Authentication**: Required (JWT)
+- **Content-Type**: `application/json`
+
+#### Query Parameters
+
+| Parameter | Type   | Required | Description                                           |
+| --------- | ------ | -------- | ----------------------------------------------------- |
+| groupId   | number | Yes      | ID of the group to search users in                    |
+| cursorId  | number | No       | Last item ID from previous page (null for first page) |
+| size      | number | No       | Number of items per page (1-50, default: 10)          |
+
+#### Response: `200 OK`
+
+```json
+{
+  "content": [
+    {
+      "userId": 101,
+      "username": "user1@snu.ac.kr",
+      "nickname": "UserOne",
+      "major": "Computer Science",
+      "studentNumber": "2020-12345",
+      "profileImageUrl": "https://...",
+      "bio": "Backend developer",
+      "role": "USER",
+      "createdAt": "2026-01-15T10:30:00Z"
+    },
+    {
+      "userId": 102,
+      "username": "user2@snu.ac.kr",
+      "nickname": "UserTwo",
+      "major": "Electrical Engineering",
+      "studentNumber": "2021-23456",
+      "profileImageUrl": "https://...",
+      "bio": "ML enthusiast",
+      "role": "USER",
+      "createdAt": "2026-01-18T14:20:00Z"
+    }
+  ],
+  "nextCursorId": 102,
+  "hasNext": false
+}
+```
+
+---
+
+## Review Management
+
+### 1. Create Review
+
+Create a review for a group member.
+
+- **Endpoint**: `POST /api/reviews`
+- **Authentication**: Required (JWT)
+- **Content-Type**: `application/json`
+
+#### Request Body
+
+```json
+{
+  "groupId": 1,
+  "revieweeId": 5,
+  "rating": 4,
+  "comment": "Great teamwork and communication skills!"
+}
+```
+
+| Field      | Type   | Required | Description                   |
+| ---------- | ------ | -------- | ----------------------------- |
+| groupId    | number | Yes      | ID of the group               |
+| revieweeId | number | Yes      | ID of the user being reviewed |
+| rating     | number | Yes      | Rating score (typically 1-5)  |
+| comment    | string | No       | Review comment/feedback       |
+
+#### Response: `200 OK`
+
+```json
+{
+  "id": 1,
+  "groupId": 1,
+  "reviewerId": 10,
+  "revieweeId": 5,
+  "rating": 4,
+  "comment": "Great teamwork and communication skills!",
+  "createdAt": "2026-02-01T10:30:00Z",
+  "updatedAt": "2026-02-01T10:30:00Z"
+}
+```
+
+---
+
+### 2. Update Review
+
+Update an existing review.
+
+- **Endpoint**: `PATCH /api/reviews`
+- **Authentication**: Required (JWT)
+- **Content-Type**: `application/json`
+
+#### Request Body
+
+```json
+{
+  "reviewId": 1,
+  "rating": 5,
+  "comment": "Updated: Excellent collaboration!"
+}
+```
+
+| Field    | Type   | Required | Description                |
+| -------- | ------ | -------- | -------------------------- |
+| reviewId | number | Yes      | ID of the review to update |
+| rating   | number | No       | Updated rating score       |
+| comment  | string | No       | Updated review comment     |
+
+#### Response: `200 OK`
+
+```json
+{
+  "id": 1,
+  "groupId": 1,
+  "reviewerId": 10,
+  "revieweeId": 5,
+  "rating": 5,
+  "comment": "Updated: Excellent collaboration!",
+  "createdAt": "2026-02-01T10:30:00Z",
+  "updatedAt": "2026-02-01T15:45:00Z"
+}
+```
+
+---
+
+### 3. Delete Review
+
+Delete a review. Only the reviewer can delete their own review.
+
+- **Endpoint**: `DELETE /api/reviews`
+- **Authentication**: Required (JWT)
+- **Content-Type**: `application/json`
+
+#### Request Body
+
+```json
+{
+  "reviewId": 1
+}
+```
+
+| Field    | Type   | Required | Description                |
+| -------- | ------ | -------- | -------------------------- |
+| reviewId | number | Yes      | ID of the review to delete |
+
+#### Response: `200 OK`
+
+```
+(Empty response body)
+```
+
+---
+
+### 4. Search Reviews
+
+Search for reviews with optional filters using page-based pagination.
+
+- **Endpoint**: `GET /api/reviews/search`
+- **Authentication**: Not required
+- **Content-Type**: `application/json`
+
+#### Query Parameters
+
+| Parameter  | Type   | Required | Description                           |
+| ---------- | ------ | -------- | ------------------------------------- |
+| groupId    | number | No       | Filter by group ID                    |
+| reviewerId | number | No       | Filter by reviewer (author) user ID   |
+| revieweeId | number | No       | Filter by reviewee (reviewed user) ID |
+| page       | number | No       | Page number (0-indexed, default: 0)   |
+| size       | number | No       | Page size (default: 10)               |
+| sort       | string | No       | Sort field (default: createdAt)       |
+
+#### Example Request
+
+```
+GET /reviews/search?groupId=1&page=0&size=10
+```
 
 #### Response: `200 OK`
 
@@ -646,16 +1002,27 @@ Get all groups the authenticated user has joined or created with pagination supp
   "content": [
     {
       "id": 1,
-      "groupName": "Algorithm Study",
-      "description": "Weekly algorithm problem solving",
-      "categoryId": 1,
-      "subCategoryId": 2,
-      "capacity": 10,
-      "leaderId": 5,
-      "isOnline": true,
-      "location": "Zoom",
-      "status": "RECRUITING",
-      "createdAt": "2026-01-25T10:30:00Z"
+      "groupId": 1,
+      "reviewerId": 10,
+      "reviewerNickname": "John",
+      "revieweeId": 5,
+      "revieweeNickname": "Jane",
+      "rating": 4,
+      "comment": "Great teamwork!",
+      "createdAt": "2026-02-01T10:30:00Z",
+      "updatedAt": "2026-02-01T10:30:00Z"
+    },
+    {
+      "id": 2,
+      "groupId": 1,
+      "reviewerId": 12,
+      "reviewerNickname": "Mike",
+      "revieweeId": 5,
+      "revieweeNickname": "Jane",
+      "rating": 5,
+      "comment": "Excellent communication!",
+      "createdAt": "2026-02-01T12:15:00Z",
+      "updatedAt": "2026-02-01T12:15:00Z"
     }
   ],
   "pageable": {
@@ -670,9 +1037,9 @@ Get all groups the authenticated user has joined or created with pagination supp
     "paged": true,
     "unpaged": false
   },
-  "totalPages": 2,
-  "totalElements": 15,
-  "last": false,
+  "totalPages": 1,
+  "totalElements": 2,
+  "last": true,
   "first": true,
   "size": 10,
   "number": 0,
@@ -681,7 +1048,7 @@ Get all groups the authenticated user has joined or created with pagination supp
     "unsorted": false,
     "empty": false
   },
-  "numberOfElements": 10,
+  "numberOfElements": 2,
   "empty": false
 }
 ```
@@ -707,6 +1074,7 @@ All errors follow a consistent format:
 | Status Code | Description                                      |
 | ----------- | ------------------------------------------------ |
 | 200         | Success                                          |
+| 201         | Created - Resource successfully created          |
 | 400         | Bad Request - Invalid input                      |
 | 401         | Unauthorized - Invalid or missing authentication |
 | 403         | Forbidden - Insufficient permissions             |
@@ -748,42 +1116,68 @@ All errors follow a consistent format:
 
 5. **OAuth Flow**:
     - Get Google/Kakao ID token from respective SDK
-    - Send token to `/oauth/login/{provider}` (google or kakao)
+    - Send token to `/api/oauth/login/{provider}` (google or kakao)
     - If response type is `"LOGIN"`, use token as access token (login complete)
     - If response type is `"REGISTER"`, check the email in the token:
         - If SNU email: Set `email` field to `null` in signup request
         - If non-SNU email: Proceed with email verification flow
 
 6. **Email Verification Flow**:
-    - **For Regular Signup**: Send email to `/auth/code`, verify with `/auth/verify` (returns success message)
+    - **For Regular Signup**: Send email to `/api/auth/code`, verify with `/api/auth/verify` (returns success message)
     - **For OAuth with non-SNU email**:
         - Get `register_token` from OAuth login response
-        - Send verification code request to `/auth/code`
+        - Send verification code request to `/api/auth/code`
         - User receives code via email (valid for 3 minutes)
-        - Submit code with token to `/auth/social/verify`
+        - Submit code with token to `/api/auth/social/verify`
         - If response type is `"REGISTER"`, proceed to signup with additional info
 
 7. **OAuth Signup Completion**:
-    - After verification (or if email is SNU email), call `/oauth/signUp/{provider}`
+    - After verification (or if email is SNU email), call `/api/oauth/signUp/{provider}`
     - Provide `registerToken`, `email` (null if SNU), `major`, `student_number`, `nickname`
     - Receive access token and complete registration
 
-8. **Pagination**:
-    - Search endpoints now return paginated results using Spring Data's `Page` object
-    - Use `page` (0-indexed), `size`, and `sort` parameters to control pagination
+8. **Logout**:
+    - Call `POST /api/auth/logout` with the Bearer token in the Authorization header
+    - The token will be invalidated and added to a blacklist
+    - User must log in again to get a new token
+
+9. **Cursor-Based Pagination** (for group and user search):
+    - Most search endpoints use cursor-based pagination for infinite scrolling
+    - Response format: `{ content: [...], nextCursorId: number, hasNext: boolean }`
+    - For first page: send `cursorId=null` or omit the parameter
+    - For subsequent pages: use `nextCursorId` from previous response as `cursorId` parameter
+    - Check `hasNext` to determine if there are more pages
+    - Size parameter controls items per page (1-50, default: 10)
+
+10. **Page-Based Pagination** (for reviews):
+    - Review search uses traditional page-based pagination
+    - Response uses Spring Data's `Page` object
+    - Use `page` (0-indexed), `size`, and `sort` parameters
     - Access results via the `content` array in the response
     - Check `totalPages`, `totalElements`, `first`, `last` for pagination state
 
-9. **Group Operations**:
+11. **Group Operations**:
+    - Group responses now include leader information (nickname, bio, username)
     - Group leader ID can be used to determine if current user is the leader
     - Only leaders can delete or expire groups
     - Check `capacity` field: `null` means unlimited capacity
+    - Create group returns `201 Created` with the created group object
+    - Delete and expire operations return the affected ID in response body
 
-10. **Search Optimization**:
-    - `categoryId`, `subCategoryId`, and `keyword` are all optional in search
+12. **Search Optimization**:
+    - Group search: `categoryId`, `subCategoryId`, and `keyword` are all optional
     - You can use them together or separately
     - Empty query returns all groups (paginated)
-    - Default page size is 10 items, sorted by `createdAt`
+    - Three separate endpoints for different group types:
+        - `/api/groups/search` - All groups (public search)
+        - `/api/groups/search/me` - Groups I created (as leader)
+        - `/api/groups/search/joined` - Groups I joined (as member)
+
+13. **Review Management**:
+    - Reviews can be created, updated, deleted, and searched
+    - Only the original reviewer can update or delete their review
+    - Search supports filtering by groupId, reviewerId, or revieweeId
+    - Reviews use page-based pagination (not cursor-based)
 
 ---
 
@@ -793,15 +1187,47 @@ All errors follow a consistent format:
 
 ```kotlin
 interface StudyGroupApi {
+    // Authentication
     @POST("api/auth/login")
     suspend fun login(@Body request: LoginDto): LoginResponseDto
 
+    @POST("api/auth/logout")
+    suspend fun logout(@Header("Authorization") token: String): String
+
+    // Group Search (Cursor-based pagination)
     @GET("api/groups/search")
     suspend fun searchGroups(
         @Query("categoryId") categoryId: Long?,
-        @Query("keyword") keyword: String?
-    ): List<GroupResponse>
+        @Query("subCategoryId") subCategoryId: Long?,
+        @Query("keyword") keyword: String?,
+        @Query("cursorId") cursorId: Long?,
+        @Query("size") size: Int = 10
+    ): CursorResponse<GroupSearchResponse>
 
+    @GET("api/groups/search/me")
+    suspend fun searchMyGroups(
+        @Header("Authorization") token: String,
+        @Query("cursorId") cursorId: Long?,
+        @Query("size") size: Int = 10
+    ): CursorResponse<GroupSearchResponse>
+
+    @GET("api/groups/search/joined")
+    suspend fun searchJoinedGroups(
+        @Header("Authorization") token: String,
+        @Query("cursorId") cursorId: Long?,
+        @Query("size") size: Int = 10
+    ): CursorResponse<GroupSearchResponse>
+
+    // User Search (Cursor-based pagination)
+    @GET("api/users/search")
+    suspend fun searchUsersInGroup(
+        @Header("Authorization") token: String,
+        @Query("groupId") groupId: Long,
+        @Query("cursorId") cursorId: Long?,
+        @Query("size") size: Int = 10
+    ): CursorResponse<UserSearchResponseDto>
+
+    // User Profile
     @GET("api/users/me")
     suspend fun getProfile(
         @Header("Authorization") token: String
@@ -816,7 +1242,44 @@ interface StudyGroupApi {
         @Part profile_image: MultipartBody.Part?,
         @Part("bio") bio: String?
     ): GetProfileDto
+
+    // Group Management
+    @POST("api/groups")
+    suspend fun createGroup(
+        @Header("Authorization") token: String,
+        @Body request: CreateGroupDto
+    ): GroupSearchResponse
+
+    @DELETE("api/groups")
+    suspend fun deleteGroup(
+        @Header("Authorization") token: String,
+        @Body request: DeleteGroupDto
+    ): Map<String, Long>
+
+    // Reviews (Page-based pagination)
+    @GET("api/reviews/search")
+    suspend fun searchReviews(
+        @Query("groupId") groupId: Long?,
+        @Query("reviewerId") reviewerId: Long?,
+        @Query("revieweeId") revieweeId: Long?,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 10,
+        @Query("sort") sort: String = "createdAt"
+    ): Page<ReviewResponse>
+
+    @POST("api/reviews")
+    suspend fun createReview(
+        @Header("Authorization") token: String,
+        @Body request: CreateReviewDto
+    ): Review
 }
+
+// Data classes for cursor-based pagination
+data class CursorResponse<T>(
+    val content: List<T>,
+    val nextCursorId: Long?,
+    val hasNext: Boolean
+)
 ```
 
 ---

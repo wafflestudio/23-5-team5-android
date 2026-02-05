@@ -1,15 +1,14 @@
 package com.example.toyproject5.repository
 
 import com.example.toyproject5.data.local.UserPreferences
-import com.example.toyproject5.dto.LoginRequest
-import com.example.toyproject5.dto.LoginResponse
-import com.example.toyproject5.dto.UserMeResponse
+import com.example.toyproject5.dto.*
 import com.example.toyproject5.network.AuthApiService
 import com.example.toyproject5.network.UserApiService
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import okhttp3.MultipartBody
+import retrofit2.Response
 import kotlin.let
 
 class UserRepository @Inject constructor(
@@ -184,6 +183,27 @@ class UserRepository @Inject constructor(
                 // 서버 전송 실패 시 에러 처리 로직 (필요 시 롤백)
                 e.printStackTrace()
             }
+        }
+    }
+
+    /**
+     * 특정 그룹의 참여자 목록 조회
+     */
+    suspend fun getParticipants(groupId: Int): Result<List<UserSearchResponseDto>> {
+        return try {
+            val response = userApiService.searchUsersInGroup(groupId)
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) {
+                    Result.success(body.content)
+                } else {
+                    Result.failure(Exception("응답 데이터가 비어있습니다."))
+                }
+            } else {
+                Result.failure(Exception("참여자 목록을 가져오지 못했습니다. (코드: ${response.code()})"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 }
