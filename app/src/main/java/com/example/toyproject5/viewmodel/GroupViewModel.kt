@@ -28,6 +28,9 @@ class GroupViewModel @Inject constructor(
     private val _myGroups = MutableStateFlow<List<GroupResponse>>(emptyList())
     val myGroups: StateFlow<List<GroupResponse>> = _myGroups.asStateFlow()
 
+    private val _joinedGroups = MutableStateFlow<List<GroupResponse>>(emptyList())
+    val joinedGroups: StateFlow<List<GroupResponse>> = _joinedGroups.asStateFlow()
+
     private val _selectedGroup = MutableStateFlow<GroupResponse?>(null)
     val selectedGroup: StateFlow<GroupResponse?> = _selectedGroup.asStateFlow()
 
@@ -145,6 +148,19 @@ class GroupViewModel @Inject constructor(
         }
     }
 
+    fun fetchJoinedGroups() {
+        viewModelScope.launch {
+            try {
+                val response = repository.searchJoinedGroups()
+                if (response.isSuccessful) {
+                    _joinedGroups.value = response.body()?.content ?: emptyList()
+                }
+            } catch (e: Exception) {
+                // Silent fail or handle error
+            }
+        }
+    }
+
     // [추가] Toast 메시지처럼 일회성 이벤트를 위한 Flow입니다.
     private val _toastEvent = MutableSharedFlow<String>()
     val toastEvent: SharedFlow<String> = _toastEvent.asSharedFlow()
@@ -156,7 +172,7 @@ class GroupViewModel @Inject constructor(
                 if (response.isSuccessful) {
                     _toastEvent.emit("참여 신청이 완료되었습니다.")
                     onSuccess()
-                    fetchMyGroups()
+                    fetchJoinedGroups()
                 } else {
                     val errorBodyString = response.errorBody()?.string()
 
@@ -182,17 +198,20 @@ class GroupViewModel @Inject constructor(
         }
     }
 
-    fun withdrawFromGroup(groupId: Int) {
+    fun withdrawFromGroup(groupId: Int, onSuccess: () -> Unit = {}) {
         viewModelScope.launch {
             try {
                 val response = repository.withdrawFromGroup(groupId)
                 if (response.isSuccessful) {
-                    fetchMyGroups()
+                    _toastEvent.emit("그룹에서 탈퇴하였습니다.")
+                    onSuccess()
+                    fetchJoinedGroups()
                 } else {
-                    _error.value = "Failed to withdraw from group"
+                    _toastEvent.emit("탈퇴 실패: ${response.message()}")
                 }
             } catch (e: Exception) {
                 _error.value = e.localizedMessage
+                _toastEvent.emit("네트워크 오류가 발생했습니다: ${e.localizedMessage}")
             }
         }
     }
