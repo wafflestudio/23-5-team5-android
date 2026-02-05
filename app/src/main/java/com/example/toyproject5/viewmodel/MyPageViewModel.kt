@@ -10,10 +10,12 @@ import com.example.toyproject5.util.UriUtil
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filter
@@ -32,33 +34,53 @@ class MyPageViewModel @Inject constructor(
     // [임시 저장소] 낙관적 업데이트 기조
     private val _tempNickname = MutableStateFlow<String?>(null)
     private val _tempImageUri = MutableStateFlow<String?>(null)
+    private val _tempMajor = MutableStateFlow<String?>(null)
+    private val _tempBio = MutableStateFlow<String?>(null)
 
     // 에러 상태 관리 (롤백 시 사용자에게 알리기 위함)
     private val _errorMessage = MutableStateFlow<String?>(null)
 
+    // 토스트 이벤트 관리
+    private val _eventFlow = MutableSharedFlow<MyPageEvent>()
+    val eventFlow = _eventFlow.asSharedFlow()
+
     val uiState: StateFlow<MyPageState> = combine(
         listOf(
-            userRepository.nickname,      // index 0
-            userRepository.email,         // index 1
-            userRepository.profileImageUri, // index 2
-            _tempImageUri,                // index 3
-            _tempNickname,                // index 4
-            _errorMessage                 // index 5
+            userRepository.nickname,       // 0
+            userRepository.email,          // 1
+            userRepository.profileImageUri, // 2
+            userRepository.major,          // 3 (Repository에도 필드가 있다고 가정)
+            userRepository.bio,            // 4 (Repository에도 필드가 있다고 가정)
+            _tempNickname,                 // 5
+            _tempImageUri,                 // 6
+            _tempMajor,                    // 7
+            _tempBio,                      // 8
+            _errorMessage                  // 9
         )
     ) { array: Array<Any?> -> // 중요: 파라미터를 6개가 아닌 'array' 하나로 받습니다.
 
+        if (isLoggingOut) {
+            return@combine this@MyPageViewModel.uiState.value
+        }
         // 여기서 타입을 하나씩 지정해줍니다 (Casting)
         val nickname = array[0] as String
         val email = array[1] as String
         val savedUri = array[2] as String?
-        val tempUri = array[3] as String?
-        val tempNick = array[4] as String?
-        val error = array[5] as String?
+        val savedMajor = array[3] as String?
+        val savedBio = array[4] as String?
+
+        val tempNick = array[5] as String?
+        val tempUri = array[6] as String?
+        val tempMajor = array[7] as String?
+        val tempBio = array[8] as String?
+        val error = array[9] as String?
 
         MyPageState(
             nickname = tempNick ?: nickname,
             email = email,
             profileImageUrl = tempUri ?: savedUri,
+            major = tempMajor ?: savedMajor ?: "전공을 입력해주세요",
+            bio = tempBio ?: savedBio ?: "자기소개를 입력해주세요",
             errorMessage = error
         )
     }.stateIn(
@@ -66,6 +88,12 @@ class MyPageViewModel @Inject constructor(
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = MyPageState()
     )
+
+    // 업데이트 성공 및 실패에 따른 토스트
+    // UI에서 발생할 일회성 사건들을 정의한 클래스
+    sealed class MyPageEvent {
+        data class ShowToast(val message: String) : MyPageEvent()
+    }
 
     // 이미지 업로드 (낙관적 업데이트)
     fun uploadProfileImage(uri : Uri) {
@@ -77,11 +105,16 @@ class MyPageViewModel @Inject constructor(
             try {
                 val imagePart = UriUtil.toMultipartBodyPart(context, uri, "profile_image")
                 userRepository.saveProfileImage(uri.toString(), imagePart)
-                delay(500)
+
+                // 성공 알림
+                _eventFlow.emit(MyPageEvent.ShowToast("성공적으로 저장되었습니다"))
             } catch (e: Exception) {
                 // [실패 시] 저장이 실패하면 임시 값을 지워 원래 사진으로 되돌립니다.
                 _tempImageUri.value = null
                 e.printStackTrace()
+
+                // 실패 알림
+                _eventFlow.emit(MyPageEvent.ShowToast("저장 실패: ${e.localizedMessage}"))
             } finally {
                 // 저장이 확인되었거나, 에러가 났을 때만 임시 값을 지웁니다.
                 _tempImageUri.value = null
@@ -92,8 +125,13 @@ class MyPageViewModel @Inject constructor(
     // 로그아웃
     private val _isLoggedOut = MutableStateFlow(false)
     val isLoggedOut = _isLoggedOut.asStateFlow()
+    private var isLoggingOut = false
 
     fun logout() {
+
+        if (isLoggingOut) return
+        isLoggingOut = true
+
         viewModelScope.launch {
             userRepository.logout()
             _isLoggedOut.value = true // 로그아웃 성공 신호!
@@ -104,29 +142,92 @@ class MyPageViewModel @Inject constructor(
     fun updateNickname(newName: String) {
         if (newName.isBlank()) return
 
-        // [선조치] 서버 응답을 기다리지 않고 UI를 즉시 바꿉니다.
+        // [선조치] 서버 응답을 기다리지 않고 UI 변경
         _tempNickname.value = newName
         _errorMessage.value = null
 
         viewModelScope.launch {
             try {
-                // [본 작업] 서버에 수정 요청 (이미 만들어두신 Result 반환 함수 사용)
                 val result = userRepository.updateNickname(newName)
 
-                result.onFailure { exception ->
-                    // [실패 시 롤백] 서버 저장 실패 시 임시 값을 지워 원래 이름으로 되돌립니다.
+
+                result.onSuccess {
+                    // 성공시 토스트
+                    _eventFlow.emit(MyPageEvent.ShowToast("성공적으로 저장되었습니다"))
+
+                }.onFailure { exception ->
+                    // [실패 시 롤백]
                     _tempNickname.value = null
                     _errorMessage.value = exception.message ?: "닉네임 수정에 실패했습니다."
+
+                    // 실패시 토스트
+                    _eventFlow.emit(MyPageEvent.ShowToast("저장 실패: ${exception.message}"))
                 }
-                // 성공 시에는 Repository 내부에서 DataStore를 업데이트하므로
-                // 자연스럽게 정식 데이터(nickname)가 flow를 타고 내려옵니다.
             } catch (e: Exception) {
                 _tempNickname.value = null
                 _errorMessage.value = "네트워크 오류가 발생했습니다."
+                _eventFlow.emit(MyPageEvent.ShowToast("저장 실패: 네트워크 오류가 발생했습니다."))
             } finally {
-                // 작업 완료 후(성공/실패 모두) 임시 값은 비워줍니다.
-                // 성공했다면 이미 DataStore의 값이 nickname으로 들어오고 있을 것입니다.
                 _tempNickname.value = null
+            }
+        }
+    }
+
+    // 전공 변경
+    fun updateMajor(newMajor: String) {
+        if (newMajor.isBlank()) return
+
+        // [선조치] 서버 응답을 기다리지 않고 UI 변경
+        _tempMajor.value = newMajor
+        _errorMessage.value = null
+
+        viewModelScope.launch {
+            try {
+                val result = userRepository.updateMajor(newMajor)
+
+                result.onSuccess {
+                    _eventFlow.emit(MyPageEvent.ShowToast("전공이 성공적으로 저장되었습니다"))
+
+                }.onFailure {
+                    _tempMajor.value = null // 실패 시 롤백
+                    _errorMessage.value = "전공 수정에 실패했습니다."
+                    _eventFlow.emit(MyPageEvent.ShowToast("전공 수정에 실패했습니다."))
+                }
+            } catch (e: Exception) {
+                _tempMajor.value = null
+                _errorMessage.value = "네트워크 오류가 발생했습니다."
+                _eventFlow.emit(MyPageEvent.ShowToast("저장 실패: 네트워크 오류가 발생했습니다."))
+
+            } finally {
+                _tempMajor.value = null // 성공/실패 여부와 상관없이 임시는 비움 (원본 데이터가 Flow로 올 것이므로)
+            }
+        }
+    }
+
+    // 자기소개 변경
+    fun updateBio(newBio: String) {
+
+        // [선조치] 서버 응답을 기다리지 않고 UI 변경
+        _tempBio.value = newBio
+        _errorMessage.value = null
+
+        viewModelScope.launch {
+            try {
+                val result = userRepository.updateBio(newBio)
+
+                result.onSuccess {
+                    _eventFlow.emit(MyPageEvent.ShowToast("자기소개가 성공적으로 저장되었습니다"))
+                }.onFailure {
+                    _tempBio.value = null
+                    _errorMessage.value = "자기소개 수정에 실패했습니다."
+                    _eventFlow.emit(MyPageEvent.ShowToast("자기소개 수정에 실패했습니다."))
+                }
+            } catch (e: Exception) {
+                _tempBio.value = null
+                _errorMessage.value = "네트워크 오류가 발생했습니다."
+                _eventFlow.emit(MyPageEvent.ShowToast("저장 실패: 네트워크 오류가 발생했습니다."))
+            } finally {
+                _tempBio.value = null
             }
         }
     }
@@ -139,8 +240,10 @@ class MyPageViewModel @Inject constructor(
 
 // MyPageState 클래스
 data class MyPageState(
-    val nickname: String = "냐냐",
+    val nickname: String = "임시 닉네임",
     val email: String = "ss@university.ac.kr",
+    val major: String = "전공",
+    val bio: String = "설명",
     val profileImageUrl: String? = null,
     val errorMessage: String? = null
 )

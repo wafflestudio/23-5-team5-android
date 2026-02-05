@@ -1,6 +1,17 @@
 package com.example.toyproject5.repository
 
 import com.example.toyproject5.data.local.UserPreferences
+import com.example.toyproject5.dto.EmailConfirmRequest
+import com.example.toyproject5.dto.EmailVerificationRequest
+import com.example.toyproject5.dto.SocialLoginRequest
+import com.example.toyproject5.dto.LoginRequest
+import com.example.toyproject5.dto.LoginResponse
+import com.example.toyproject5.dto.SignupRequest
+import com.example.toyproject5.dto.UserMeResponse
+import com.example.toyproject5.dto.SocialLoginResponse
+import com.example.toyproject5.dto.SocialSignupRequest
+import com.example.toyproject5.dto.SignupResponse
+import com.example.toyproject5.dto.SocialVerifyRequest
 import com.example.toyproject5.dto.*
 import com.example.toyproject5.network.AuthApiService
 import com.example.toyproject5.network.UserApiService
@@ -8,6 +19,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import okhttp3.MultipartBody
+import org.json.JSONObject
 import retrofit2.Response
 import kotlin.let
 
@@ -16,15 +28,26 @@ class UserRepository @Inject constructor(
     private val authApiService: AuthApiService,
     private val userApiService: UserApiService
 ) {
-    // 닉네임
-    // 1. 읽기: DataStore에서 흘러나오는 흐름을 그대로 노출
+    // 개인정보
+    // 읽기: DataStore에서 흘러나오는 흐름을 그대로 노출
     val nickname: Flow<String> = userDataStore.nicknameFlow
     val email: Flow<String> = userDataStore.emailFlow
+    val major: Flow<String?> = userDataStore.majorFlow
+    val bio: Flow<String?> = userDataStore.bioFlow
 
-    // 2. 쓰기: 사용자가 닉네임을 변경했을 때 호출
+    // 쓰기: 사용자가 닉네임을 변경했을 때 호출
     suspend fun updateNickname(newName: String): Result<UserMeResponse> {
-        // 나중에 여기에 서버 통신 코드(apiService.updateNickname)가 추가될 예정
         return updateProfileInfo(nickname = newName)
+    }
+
+    // 전공 변경
+    suspend fun updateMajor(newMajor: String): Result<UserMeResponse> {
+        return updateProfileInfo(major = newMajor)
+    }
+
+    // 자기소개 변경
+    suspend fun updateBio(newBio: String): Result<UserMeResponse> {
+        return updateProfileInfo(bio = newBio)
     }
 
     // 정보 불러오기
@@ -37,7 +60,8 @@ class UserRepository @Inject constructor(
                 if (body != null) {
                     userDataStore.saveNickname(body.nickname)
                     body.profileImageUrl?.let { userDataStore.saveProfileImage(it) }
-                    // TODO: role, bio 등 추가 저장 가능
+                    body.major?.let { userDataStore.saveMajor(it) }
+                    body.bio?.let { userDataStore.saveBio(it) }
 
                     Result.success(body)
                 } else {
@@ -79,12 +103,13 @@ class UserRepository @Inject constructor(
             if (response.isSuccessful && response.body() != null) {
                 val updatedData = response.body()!!
 
-                // TODO: 현재 예시에서는 닉네임만 저장하고 있지만, major 등도 저장
                 userDataStore.saveNickname(updatedData.nickname)
+                updatedData.major?.let { userDataStore.saveMajor(it) }
+                updatedData.bio?.let { userDataStore.saveBio(it) }
+                updatedData.profileImageUrl?.let { userDataStore.saveProfileImage(it) }
 
                 Result.success(updatedData)
             } else {
-                // 4. 에러 코드별 상세 처리
                 val errorMessage = when (response.code()) {
                     409 -> "이미 사용 중인 닉네임입니다."
                     400 -> "입력값이 유효하지 않습니다."
@@ -98,7 +123,6 @@ class UserRepository @Inject constructor(
         }
     }
 
-    // 로그인 함수
     /**
      * [일반 로그인 함수]
      * @param loginRequest: 이메일과 비밀번호가 담긴 객체
@@ -127,6 +151,206 @@ class UserRepository @Inject constructor(
             } else {
                 // 서버 에러 처리
                 Result.failure(Exception("로그인 실패 (에러 코드: ${response.code()})"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // 이메일 인증 발송
+    suspend fun sendEmail(email: String): Result<Unit> {
+        return try {
+            val response = authApiService.sendVerificationEmail(EmailVerificationRequest(email))
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            }
+            else {
+                val errorBodyString = response.errorBody()?.string()
+
+                val errorMessage = errorBodyString?.let {
+                    try {
+                        JSONObject(it).getString("message")
+                    } catch (e: Exception) {
+                        null
+                    }
+                } ?: "인증 발송 중 오류가 발생했습니다. (Error Code: ${response.code()})"
+
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // 인증 코드 확인
+    suspend fun verifyCode(email: String, code: String): Result<Unit> {
+        return try {
+            val response = authApiService.verifyEmailCode(EmailConfirmRequest(email, code))
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                val errorBodyString = response.errorBody()?.string()
+
+                val errorMessage = errorBodyString?.let {
+                    try {
+                        JSONObject(it).getString("message")
+                    } catch (e: Exception) {
+                        null
+                    }
+                } ?: "인증 코드 확인 중 오류가 발생했습니다. (Error Code: ${response.code()})"
+
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // 회원가입
+    suspend fun signup(request: SignupRequest): Result<SignupResponse> {
+        return try {
+            val response = authApiService.signup(request)
+            if (response.isSuccessful && response.body() != null) {
+                val body = response.body()!!
+                // 가입 성공 시 토큰 저장
+                userDataStore.saveToken(body.accessToken)
+                Result.success(body)
+            } else {
+                val errorBodyString = response.errorBody()?.string()
+
+                val errorMessage = errorBodyString?.let {
+                    try {
+                        JSONObject(it).getString("message")
+                    } catch (e: Exception) {
+                        null
+                    }
+                } ?: "회원가입 중 오류가 발생했습니다. (Error Code: ${response.code()})"
+
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * [구글 로그인 처리]
+     * @param idToken: 구글에서 받은 id_token
+     * @param email: 로컬에 저장할 구글 이메일
+     */
+    suspend fun handleGoogleAuth(idToken: String, email: String): Result<SocialLoginResponse> {
+        return try {
+            val response = authApiService.googleLogin(googleLoginRequest = SocialLoginRequest(idToken))
+
+            if (response.isSuccessful && response.body() != null) {
+                val body = response.body()!!
+
+                if (body.type == "REGISTER") {
+                    // 케이스 A: 추가 회원가입이 필요한 상태
+                    // 이메일만 저장하고 회원가입 화면으로 보내야 합니다.
+                    userDataStore.saveEmail(email)
+                    Result.success(body)
+                } else {
+                    // 케이스 B: 이미 가입된 유저 (로그인 성공)
+                    userDataStore.saveEmail(email)
+                    userDataStore.saveToken(body.token) // 최종 토큰 저장
+                    // 필요하다면 닉네임 등 추가 정보 저장
+                    Result.success(body)
+                }
+            } else {
+                val errorBodyString = response.errorBody()?.string()
+
+                val errorMessage = errorBodyString?.let {
+                    try {
+                        JSONObject(it).getString("message")
+                    } catch (e: Exception) {
+                        null
+                    }
+                } ?: "구글 로그인 중 오류가 발생했습니다. (Error Code: ${response.code()})"
+
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * [구글 회원가입 재학생 인증]
+     * @param registerToken: 구글에서 받은 회원가입용 token
+     * @param snuEmail: 재학생 인증 이메일
+     * @param code: 인증 코드
+     */
+    suspend fun verifySocialEmailCode(registerToken: String, snuEmail: String, code: String): Result<SocialLoginResponse> {
+        return try {
+            // 소셜 전용 인증 API 호출
+            val response = authApiService.verifySocialEmailCode(
+                SocialVerifyRequest(
+                    registerToken,
+                    snuEmail,
+                    code
+                )
+            )
+            if (response.isSuccessful && response.body() != null) {
+                val body = response.body()!!
+                if (body.type == "REGISTER") {
+                    // 케이스 A: 추가 회원가입이 필요한 상태
+                    // 이메일만 저장하고 회원가입 화면으로
+                    userDataStore.saveEmail(snuEmail)
+                    Result.success(body)
+                } else {
+                    // 케이스 B: 이미 가입된 유저 (로그인 성공)
+                    userDataStore.saveEmail(snuEmail)
+                    userDataStore.saveToken(body.token) // 최종 토큰 저장
+                    Result.success(body)
+                }
+            }
+            else {
+                val errorBodyString = response.errorBody()?.string()
+
+                val errorMessage = errorBodyString?.let {
+                    try {
+                        JSONObject(it).getString("message")
+                    } catch (e: Exception) {
+                        null
+                    }
+                } ?: "재학생 인증 확인 중 오류가 발생했습니다. (Error Code: ${response.code()})"
+
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) { Result.failure(e) }
+    }
+
+    /**
+     * [구글 회원가입 처리]
+     * @param request: 서버가 요구하는 추가 정보 (임시 토큰, 학과, 학번, 닉네임 등)
+     * @return Result<SocialSignupResponse>: 최종 가입 및 로그인 성공 결과
+     */
+    suspend fun googleSignup(request: SocialSignupRequest): Result<SignupResponse> {
+        return try {
+            // 소셜 회원가입 API 호출
+            val response = authApiService.googleSignup(provider = "google", request = request)
+
+            if (response.isSuccessful && response.body() != null) {
+                val body = response.body()!!
+
+                // 가입 성공 시 최종 액세스 토큰과 닉네임 저장
+                userDataStore.saveToken(body.accessToken)
+                userDataStore.saveNickname(body.nickname)
+
+                Result.success(body)
+            } else {
+                val errorBodyString = response.errorBody()?.string()
+
+                val errorMessage = errorBodyString?.let {
+                    try {
+                        JSONObject(it).getString("message")
+                    } catch (e: Exception) {
+                        null
+                    }
+                } ?: "구글 회원가입 중 오류가 발생했습니다. (Error Code: ${response.code()})"
+
+                Result.failure(Exception(errorMessage))
             }
         } catch (e: Exception) {
             Result.failure(e)

@@ -86,4 +86,7 @@ dependencies {
 
     // 프로필 이미지 보여주기
     implementation("io.coil-kt:coil-compose:2.5.0")
+
+    // google 소셜 로그인
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
 }

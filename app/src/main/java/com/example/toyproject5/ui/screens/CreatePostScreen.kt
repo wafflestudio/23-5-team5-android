@@ -1,5 +1,6 @@
 package com.example.toyproject5.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -23,6 +25,9 @@ fun CreatePostScreen(
     onBack: () -> Unit,
     viewModel: GroupViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
+    val errorMessage by viewModel.error.collectAsState()
+    
     var groupName by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf("스터디") }
     var capacity by remember { mutableStateOf("") }
@@ -30,6 +35,13 @@ fun CreatePostScreen(
     var description by remember { mutableStateOf("") }
 
     val categories = listOf("스터디", "고시", "취준", "대외활동")
+
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearError()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -178,8 +190,11 @@ fun CreatePostScreen(
                                 location = location
                             )
                             viewModel.createGroup(request) {
+                                Toast.makeText(context, "공고가 등록되었습니다.", Toast.LENGTH_SHORT).show()
                                 onBack()
                             }
+                        } else {
+                            Toast.makeText(context, "필수 항목을 입력해주세요.", Toast.LENGTH_SHORT).show()
                         }
                     },
                     modifier = Modifier
