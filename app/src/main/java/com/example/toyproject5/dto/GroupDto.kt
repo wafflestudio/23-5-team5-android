@@ -39,6 +39,7 @@ data class GroupResponse(
     @SerializedName("category_id") val categoryId: Int,
     @SerializedName("sub_category_id") val subCategoryId: Int,
     @SerializedName("capacity") val capacity: Int?,
+    @SerializedName("leaderId") val leaderId: Int,
     @SerializedName("leader_nickname") val leaderNickname: String,
     @SerializedName("leader_user_name") val leaderUserName: String,
     @SerializedName("is_online") val isOnline: Boolean,
