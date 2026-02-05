@@ -71,7 +71,3 @@ Refer to `API_SPECIFICATION.md` for detailed API specifications. The following a
 - [API_SPECIFICATION.md](./API_SPECIFICATION.md): For API details.
 - `app/build.gradle.kts`: For project dependencies.
 - The relevant `ApiService.kt`, `ViewModel.kt`, and `Repository.kt` files for the feature you are working on.
-
-## License and Contribution
-
-Project license and contribution guidelines should be defined separately.

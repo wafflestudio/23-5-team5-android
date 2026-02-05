@@ -56,4 +56,11 @@ interface GroupApiService {
         @Query("size") size: Int? = null,
         @Query("sort") sort: String? = null
     ): Response<GroupSearchResponse>
+
+    @GET("api/groups/search/joined")
+    suspend fun searchJoinedGroups(
+        @Query("page") page: Int? = null,
+        @Query("size") size: Int? = null,
+        @Query("sort") sort: String? = null
+    ): Response<GroupSearchResponse>
 }
