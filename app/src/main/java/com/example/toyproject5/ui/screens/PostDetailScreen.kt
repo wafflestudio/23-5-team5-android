@@ -36,20 +36,23 @@ fun PostDetailScreen(
     viewModel: GroupViewModel = hiltViewModel()
 ) {
     val post by viewModel.selectedGroup.collectAsState()
+    val joinedGroups by viewModel.joinedGroups.collectAsState()
     val currentUserId by viewModel.currentUserId.collectAsState()
     val context = LocalContext.current
 
-    // ViewModel의 toastEvent를 관찰
+    // Initialize data
+    LaunchedEffect(Unit) {
+        viewModel.fetchJoinedGroups()
+    }
+
+    // Observe toast events
     LaunchedEffect(Unit) {
         viewModel.toastEvent.collect { message ->
-            // SharedFlow에서 메시지가 emit(발행)될 때마다 이 블록이 실행됩니다.
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
     }
 
     if (post == null) {
-        // In case of direct navigation or process death, we might want to fetch it
-        // but since there's no single fetch API, we just show a loading or error
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
@@ -58,6 +61,7 @@ fun PostDetailScreen(
 
     val currentPost = post!!
     val isClosed = currentPost.status != "RECRUITING"
+    val isJoined = joinedGroups.any { it.id == currentPost.id }
     val isMyPost = currentUserId != null && currentPost.leaderId.toLong() == currentUserId
     
     val categoryName = when (currentPost.categoryId) {
@@ -88,17 +92,27 @@ fun PostDetailScreen(
             ) {
                 Button(
                     onClick = {
-                        viewModel.joinGroup(currentPost.id)
+                        if (isJoined) {
+                            viewModel.withdrawFromGroup(currentPost.id)
+                        } else {
+                            viewModel.joinGroup(currentPost.id)
+                        }
                     },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
-                    enabled = !isClosed && !isMyPost,
+                    enabled = !isClosed && !isMyPost || isJoined, // Allow withdrawing even if closed
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isClosed || isMyPost) Color.Gray else Color(0xFF155DFC)
+                        containerColor = when {
+                            isJoined -> Color(0xFFEF4444) // Red for withdraw
+                            isClosed -> Color.Gray
+                            isMyPost -> Color.Gray
+                            else -> Color(0xFF155DFC)
+                        }
                     )
                 ) {
                     Text(
                         text = when {
+                            isJoined -> "나가기"
                             isClosed -> "모집 마감"
                             isMyPost -> "내가 작성한 글"
                             else -> "참여하기"
