@@ -6,20 +6,24 @@ import com.example.toyproject5.dto.ErrorResponse
 import com.example.toyproject5.dto.GroupCreateRequest
 import com.example.toyproject5.dto.GroupResponse
 import com.example.toyproject5.repository.GroupRepository
+import com.example.toyproject5.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class GroupViewModel @Inject constructor(
-    private val repository: GroupRepository
+    private val repository: GroupRepository,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     private val _groups = MutableStateFlow<List<GroupResponse>>(emptyList())
@@ -39,6 +43,9 @@ class GroupViewModel @Inject constructor(
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
+
+    val currentUserId: StateFlow<Long?> = userRepository.userId
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     private var currentPage = 0
     private var isLastPage = false

@@ -36,6 +36,7 @@ fun PostDetailScreen(
     viewModel: GroupViewModel = hiltViewModel()
 ) {
     val post by viewModel.selectedGroup.collectAsState()
+    val currentUserId by viewModel.currentUserId.collectAsState()
     val context = LocalContext.current
 
     // ViewModel의 toastEvent를 관찰
@@ -57,6 +58,8 @@ fun PostDetailScreen(
 
     val currentPost = post!!
     val isClosed = currentPost.status != "RECRUITING"
+    val isMyPost = currentUserId != null && currentPost.leaderId.toLong() == currentUserId
+    
     val categoryName = when (currentPost.categoryId) {
         1 -> "스터디"
         2 -> "고시"
@@ -89,13 +92,17 @@ fun PostDetailScreen(
                     },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
-                    enabled = !isClosed,
+                    enabled = !isClosed && !isMyPost,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isClosed) Color.Gray else Color(0xFF155DFC)
+                        containerColor = if (isClosed || isMyPost) Color.Gray else Color(0xFF155DFC)
                     )
                 ) {
                     Text(
-                        text = if (isClosed) "모집 마감" else "참여하기", 
+                        text = when {
+                            isClosed -> "모집 마감"
+                            isMyPost -> "내가 작성한 글"
+                            else -> "참여하기"
+                        },
                         fontWeight = FontWeight.Bold, 
                         color = Color.White
                     )
