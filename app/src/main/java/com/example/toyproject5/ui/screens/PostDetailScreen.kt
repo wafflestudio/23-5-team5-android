@@ -193,16 +193,15 @@ fun PostDetailScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "L",
+                        text = currentPost.leaderNickname.take(1).uppercase(),
                         color = Color.White,
                         fontWeight = FontWeight.Bold
                     )
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
-                    Text(text = "방장 ID: ${currentPost.leaderId}", fontSize = 16.sp, fontWeight = FontWeight.Medium)
-                    // Note: Basic GroupResponse doesn't have detailed leader info like name/email
-                    // This would require an additional user fetch if needed.
+                    Text(text = currentPost.leaderNickname, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    Text(text = currentPost.leaderUserName, fontSize = 14.sp, color = Color(0xFF6A7282))
                 }
             }
             
