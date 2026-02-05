@@ -111,7 +111,6 @@ class MyPageViewModel @Inject constructor(
             } catch (e: Exception) {
                 // [실패 시] 저장이 실패하면 임시 값을 지워 원래 사진으로 되돌립니다.
                 _tempImageUri.value = null
-                e.printStackTrace()
 
                 // 실패 알림
                 _eventFlow.emit(MyPageEvent.ShowToast("저장 실패: ${e.localizedMessage}"))

@@ -393,17 +393,17 @@ class UserRepository @Inject constructor(
 
         // [후보고 - 서버 전송 준비]
         imagePart?.let {
-            try {
-                val response = userApiService.uploadProfileImage(it)
-                if (response.isSuccessful) {
-                    // 서버 업로드 성공 시, 서버가 준 '진짜 인터넷 주소'로 금고를 갱신
-                    response.body()?.profileImageUrl?.let { serverUrl ->
-                        userDataStore.saveProfileImage(serverUrl)
-                    }
+            val response = userApiService.uploadProfileImage(it)
+
+            if (response.isSuccessful) {
+                val serverUrl = response.body()?.profileImageUrl
+                if (serverUrl != null) {
+                    // 서버 업로드 성공 시에만 갱신
+                    userDataStore.saveProfileImage(serverUrl)
                 }
-            } catch (e: Exception) {
-                // 서버 전송 실패 시 에러 처리 로직 (필요 시 롤백)
-                e.printStackTrace()
+            } else {
+                // 서버가 에러 응답을 주면 예외
+                throw Exception("서버 업로드 실패: ${response.code()}")
             }
         }
     }

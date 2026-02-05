@@ -119,12 +119,6 @@ fun MyPageScreen(pingViewModel: PingViewModel = hiltViewModel(),
 
             // 푸터 (앱 정보)
             MyPageFooter()
-
-            // 서버 통신 테스트 섹션
-            PingPongTestSection(
-                pingMessage = pingMessage,
-                onPingClick = { pingViewModel.fetchPing() }
-            )
         }
     }
 
