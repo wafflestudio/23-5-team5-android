@@ -46,11 +46,42 @@ fun CreatePostScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 title = { Text("공고 작성", fontSize = 18.sp, fontWeight = FontWeight.Bold) },
-                actions = {
+                navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.Close, contentDescription = "Close")
+                        Icon(Icons.Default.Close, contentDescription = "취소")
+                    }
+                },
+                actions = {
+                    TextButton(
+                        onClick = {
+                            if (groupName.isNotBlank() && description.isNotBlank()) {
+                                val request = GroupCreateRequest(
+                                    groupName = groupName,
+                                    description = description,
+                                    categoryId = when (selectedCategory) {
+                                        "스터디" -> 1
+                                        "고시" -> 2
+                                        "취준" -> 3
+                                        "대외활동" -> 4
+                                        else -> 1
+                                    },
+                                    subCategoryId = 1,
+                                    capacity = capacity.toIntOrNull(),
+                                    isOnline = isOnline,
+                                    location = location
+                                )
+                                viewModel.createGroup(request) {
+                                    Toast.makeText(context, "공고가 등록되었습니다.", Toast.LENGTH_SHORT).show()
+                                    onBack()
+                                }
+                            } else {
+                                Toast.makeText(context, "필수 항목을 입력해주세요.", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    ) {
+                        Text("등록", color = Color(0xFF155DFC), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     }
                 }
             )
@@ -180,58 +211,6 @@ fun CreatePostScreen(
                 )
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Button(
-                    onClick = onBack,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(48.dp),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE5E7EB))
-                ) {
-                    Text("취소", color = Color(0xFF364153), fontWeight = FontWeight.Bold)
-                }
-                Button(
-                    onClick = {
-                        if (groupName.isNotBlank() && description.isNotBlank()) {
-                            val request = GroupCreateRequest(
-                                groupName = groupName,
-                                description = description,
-                                categoryId = when (selectedCategory) {
-                                    "스터디" -> 1
-                                    "고시" -> 2
-                                    "취준" -> 3
-                                    "대외활동" -> 4
-                                    else -> 1
-                                },
-                                subCategoryId = 1,
-                                capacity = capacity.toIntOrNull(),
-                                isOnline = isOnline,
-                                location = location
-                            )
-                            viewModel.createGroup(request) {
-                                Toast.makeText(context, "공고가 등록되었습니다.", Toast.LENGTH_SHORT).show()
-                                onBack()
-                            }
-                        } else {
-                            Toast.makeText(context, "필수 항목을 입력해주세요.", Toast.LENGTH_SHORT).show()
-                        }
-                    },
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(48.dp),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF155DFC))
-                ) {
-                    Text("등록", color = Color.White, fontWeight = FontWeight.Bold)
-                }
-            }
-            
             Spacer(modifier = Modifier.height(32.dp))
         }
     }
