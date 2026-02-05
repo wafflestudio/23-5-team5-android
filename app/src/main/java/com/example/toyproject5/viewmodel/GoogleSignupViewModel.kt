@@ -5,8 +5,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.toyproject5.repository.UserRepository
 import com.example.toyproject5.dto.SocialSignupRequest
+import com.example.toyproject5.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,7 +16,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class GoogleSignupViewModel @Inject constructor(
-    private val userRepository: UserRepository
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     // 학과, 학번, 닉네임 상태 관리
@@ -40,7 +40,7 @@ class GoogleSignupViewModel @Inject constructor(
                 nickname = nickname
             )
 
-            val result = userRepository.googleSignup(request)
+            val result = authRepository.googleSignup(request)
 
             result.onSuccess {
                 _uiState.update { it.copy(isLoading = false, isSuccess = true) }

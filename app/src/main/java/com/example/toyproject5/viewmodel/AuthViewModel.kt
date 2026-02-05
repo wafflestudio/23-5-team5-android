@@ -1,4 +1,3 @@
-// app/src/main/java/com/example/toyproject5/viewmodel/AuthViewModel.kt
 package com.example.toyproject5.viewmodel
 
 import androidx.lifecycle.ViewModel

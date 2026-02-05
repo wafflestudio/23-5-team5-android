@@ -5,7 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.toyproject5.repository.UserRepository
+import com.example.toyproject5.repository.AuthRepository
 import com.example.toyproject5.dto.SignupRequest
 import com.example.toyproject5.ui.screens.auth.SignupUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,7 +19,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SignupViewModel @Inject constructor(
-    private val userRepository: UserRepository
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     // UI 상태 관리
@@ -56,7 +56,7 @@ class SignupViewModel @Inject constructor(
     fun sendEmail() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            val result = userRepository.sendEmail(email)
+            val result = authRepository.sendEmail(email)
             result.onSuccess {
                 startTimer()
                 _uiState.update { it.copy(isLoading = false, isEmailSent = true, currentStep = 2) }
@@ -70,7 +70,7 @@ class SignupViewModel @Inject constructor(
     fun verifyCode() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            val result = userRepository.verifyCode(email, authCode)
+            val result = authRepository.verifyCode(email, authCode)
             result.onSuccess {
                 _uiState.update { it.copy(isLoading = false, isVerified = true, currentStep = 3) }
             }.onFailure { e ->
@@ -84,7 +84,7 @@ class SignupViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-            userRepository.sendEmail(email).onSuccess {
+            authRepository.sendEmail(email).onSuccess {
                 _uiState.update { it.copy(
                     isLoading = false,
                     errorMessage = "인증번호가 재발송되었습니다." // 스낵바로 표시
@@ -109,7 +109,7 @@ class SignupViewModel @Inject constructor(
                 student_number = studentNumber,
                 nickname = nickname
             )
-            val result = userRepository.signup(request)
+            val result = authRepository.signup(request)
             result.onSuccess {
                 _uiState.update { it.copy(isLoading = false, isSignupSuccess = true) }
             }.onFailure { e ->

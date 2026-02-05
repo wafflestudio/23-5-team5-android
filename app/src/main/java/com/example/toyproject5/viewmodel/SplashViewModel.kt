@@ -2,7 +2,7 @@ package com.example.toyproject5.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.toyproject5.repository.UserRepository
+import com.example.toyproject5.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,7 +12,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SplashViewModel @Inject constructor(
-    private val userRepository: UserRepository
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     // 자동 로그인 결과 상태 (null: 확인 중, true: 성공, false: 실패)
@@ -25,7 +25,7 @@ class SplashViewModel @Inject constructor(
 
     private fun checkLoginStatus() {
         viewModelScope.launch {
-            val isValid = userRepository.checkAutoLogin()
+            val isValid = authRepository.checkAutoLogin()
             _isAutoLoginSuccess.value = isValid
         }
     }

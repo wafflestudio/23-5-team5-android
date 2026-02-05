@@ -5,7 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.toyproject5.dto.LoginRequest
-import com.example.toyproject5.repository.UserRepository
+import com.example.toyproject5.repository.AuthRepository
 import com.example.toyproject5.ui.screens.auth.LoginUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -19,7 +19,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val userRepository: UserRepository
+    private val authRepository: AuthRepository
 ) : ViewModel(){
     val email = MutableStateFlow("")
     val password = MutableStateFlow("")
@@ -53,7 +53,7 @@ class LoginViewModel @Inject constructor(
             )
 
             // Repository의 로그인 함수를 호출하고 결과 받기
-            val result = userRepository.login(loginRequest)
+            val result = authRepository.login(loginRequest)
             result.onSuccess {
                 // 로그인 성공 시
                 syncUserInfo()
@@ -73,7 +73,7 @@ class LoginViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
             // UserRepository에 구글 로그인 처리 함수
-            val result = userRepository.handleGoogleAuth(idToken, email)
+            val result = authRepository.handleGoogleAuth(idToken, email)
 
             result.onSuccess { response ->
                 if (response.type == "LOGIN") {
@@ -103,7 +103,7 @@ class LoginViewModel @Inject constructor(
     }
 
     private suspend fun syncUserInfo() {
-        userRepository.fetchMyInfo()
+        authRepository.fetchMyInfo()
             .onSuccess {
                 _uiState.update { it.copy(isLoading = false, isLoginSuccess = true) }
             }

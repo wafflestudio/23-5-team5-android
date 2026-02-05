@@ -7,7 +7,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.toyproject5.dto.SocialLoginResponse
-import com.example.toyproject5.repository.UserRepository
+import com.example.toyproject5.repository.AuthRepository
 import com.example.toyproject5.ui.screens.auth.SocialVerifyUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -20,7 +20,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SocialVerifyViewModel @Inject constructor(
-    private val userRepository: UserRepository,
+    private val authRepository: AuthRepository,
     savedStateHandle: SavedStateHandle // NavHost에서 보낸 token
 ) : ViewModel() {
 
@@ -53,7 +53,7 @@ class SocialVerifyViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             // Repository에 sendSocialVerifyEmail 함수 구현 필요
-            userRepository.sendEmail(email).onSuccess {
+            authRepository.sendEmail(email).onSuccess {
                 _uiState.update { it.copy(currentStep = 2, isLoading = false) }
                 startTimer()
             }.onFailure { /* 에러 처리 */ }
@@ -65,7 +65,7 @@ class SocialVerifyViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-            userRepository.verifySocialEmailCode(registerToken, email, authCode).onSuccess { response ->
+            authRepository.verifySocialEmailCode(registerToken, email, authCode).onSuccess { response ->
                 _uiState.update { it.copy(isLoading = false) }
                 onSuccess(response, email) // 인증된 메일을 들고 다음 화면으로!
             }.onFailure { e ->
