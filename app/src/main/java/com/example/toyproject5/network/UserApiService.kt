@@ -1,14 +1,12 @@
 package com.example.toyproject5.network
 
+import com.example.toyproject5.dto.CursorResponse
 import com.example.toyproject5.dto.ImageResponse
 import com.example.toyproject5.dto.UserMeResponse
+import com.example.toyproject5.dto.UserSearchResponseDto
 import okhttp3.MultipartBody
 import retrofit2.Response
-import retrofit2.http.GET
-import retrofit2.http.Multipart
-import retrofit2.http.PATCH
-import retrofit2.http.PUT
-import retrofit2.http.Part
+import retrofit2.http.*
 
 interface UserApiService {
     // 이미지 업로드를 위한 멀티파트 요청
@@ -30,4 +28,12 @@ interface UserApiService {
         @Part major: MultipartBody.Part? = null,
         @Part bio: MultipartBody.Part? = null
     ): Response<UserMeResponse>
+
+    // 특정 그룹의 참여자 검색 (커서 기반 페이징)
+    @GET("api/users/search")
+    suspend fun searchUsersInGroup(
+        @Query("groupId") groupId: Int,
+        @Query("cursorId") cursorId: Long? = null,
+        @Query("size") size: Int = 10
+    ): Response<CursorResponse<UserSearchResponseDto>>
 }

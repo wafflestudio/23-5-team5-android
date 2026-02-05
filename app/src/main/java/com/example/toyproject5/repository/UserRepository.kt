@@ -12,6 +12,7 @@ import com.example.toyproject5.dto.SocialLoginResponse
 import com.example.toyproject5.dto.SocialSignupRequest
 import com.example.toyproject5.dto.SignupResponse
 import com.example.toyproject5.dto.SocialVerifyRequest
+import com.example.toyproject5.dto.*
 import com.example.toyproject5.network.AuthApiService
 import com.example.toyproject5.network.UserApiService
 import javax.inject.Inject
@@ -405,6 +406,27 @@ class UserRepository @Inject constructor(
                 // 서버가 에러 응답을 주면 예외
                 throw Exception("서버 업로드 실패: ${response.code()}")
             }
+        }
+    }
+
+    /**
+     * 특정 그룹의 참여자 목록 조회
+     */
+    suspend fun getParticipants(groupId: Int): Result<List<UserSearchResponseDto>> {
+        return try {
+            val response = userApiService.searchUsersInGroup(groupId)
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) {
+                    Result.success(body.content)
+                } else {
+                    Result.failure(Exception("응답 데이터가 비어있습니다."))
+                }
+            } else {
+                Result.failure(Exception("참여자 목록을 가져오지 못했습니다. (코드: ${response.code()})"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 }
