@@ -53,12 +53,18 @@ fun RecruitmentScreen(
         )
     }
 
+    val isLastPage by viewModel.isLastPage.collectAsState()
+
     // Load more items when scrolled to bottom
     val shouldLoadMore = remember {
         derivedStateOf {
             val lastVisibleItemIndex = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
             // Load more when we are near the end of the list
-            lastVisibleItemIndex >= groups.size - 3 && groups.isNotEmpty() && !isLoading && !isMoreLoading
+            lastVisibleItemIndex >= groups.size - 3 &&
+            groups.isNotEmpty() &&
+                    !isLoading &&
+                    !isMoreLoading &&
+                    !isLastPage
         }
     }
 

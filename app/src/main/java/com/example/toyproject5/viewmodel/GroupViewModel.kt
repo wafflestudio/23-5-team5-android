@@ -50,8 +50,9 @@ class GroupViewModel @Inject constructor(
     val currentUserId: StateFlow<Long?> = userRepository.userId
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    private var currentPage = 0
-    private var isLastPage = false
+    private var nextCursor: Int? = null
+    private val _isLastPage = MutableStateFlow(false)
+    val isLastPage: StateFlow<Boolean> = _isLastPage.asStateFlow()
     private val pageSize = 10
     private var searchJob: Job? = null
 
@@ -99,11 +100,11 @@ class GroupViewModel @Inject constructor(
     fun searchGroups(categoryId: Int? = null, keyword: String? = null, isRefresh: Boolean = true) {
         if (isRefresh) {
             searchJob?.cancel()
-            currentPage = 0
-            isLastPage = false
+            nextCursor = null
+            _isLastPage.value = false
             _isLoading.value = true
         } else {
-            if (isLastPage || _isMoreLoading.value || _isLoading.value) {
+            if (_isLastPage.value || _isMoreLoading.value || _isLoading.value) {
                 return
             }
             _isMoreLoading.value = true
@@ -111,7 +112,7 @@ class GroupViewModel @Inject constructor(
 
         searchJob = viewModelScope.launch {
             try {
-                val response = repository.searchGroups(categoryId, keyword, page = currentPage, size = pageSize)
+                val response = repository.searchGroups(categoryId, keyword, cursor = nextCursor, size = pageSize)
                 if (response.isSuccessful) {
                     val searchResponse = response.body()
                     val newGroups = searchResponse?.content ?: emptyList()
@@ -127,10 +128,9 @@ class GroupViewModel @Inject constructor(
                         _groups.value = currentList + filteredNewGroups
                     }
 
-                    isLastPage = searchResponse?.last ?: true
-                    if (!isLastPage) {
-                        currentPage++
-                    }
+                    val hasNext = searchResponse?.hasNext ?: false
+                    _isLastPage.value = !hasNext
+                    if (hasNext) nextCursor =searchResponse.nextCursorId
                 } else {
                     _error.value = "Search failed: ${response.message()}"
                 }
