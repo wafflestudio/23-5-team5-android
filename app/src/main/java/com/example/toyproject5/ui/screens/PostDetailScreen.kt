@@ -3,6 +3,7 @@ package com.example.toyproject5.ui.screens
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -29,14 +30,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.example.toyproject5.ui.NavRoute
 import com.example.toyproject5.viewmodel.GroupViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PostDetailScreen(
-    postId: String, 
+    postId: String,
     onBack: () -> Unit,
+    navController: NavController,
     viewModel: GroupViewModel = hiltViewModel()
 ) {
     val post by viewModel.selectedGroup.collectAsState()
@@ -212,6 +216,11 @@ fun PostDetailScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color(0xFFF9FAFB), RoundedCornerShape(10.dp))
+                    .clickable {
+                        // currentPost에 포함된 방장의 ID를 사용하여 경로를 생성합니다.
+                        // 보통 DTO에 leaderId 혹은 userId라는 이름으로 들어있을 겁니다.
+                        navController.navigate(NavRoute.UserProfile.createRoute(currentPost.leaderId))
+                    }
                     .padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {

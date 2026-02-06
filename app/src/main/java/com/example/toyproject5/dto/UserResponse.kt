@@ -78,16 +78,30 @@ data class UserMeResponse(
     @SerializedName("created_at") val createdAt: String
 )
 
+data class UserProfileResponse(
+    @SerializedName("user_id") val userId: Long,
+    val username: String,
+    val major: String?,
+    @SerializedName("student_number") val studentNumber: String?,
+    val nickname: String,
+    @SerializedName("profile_image_url") val profileImageUrl: String?,
+    val bio: String?,
+    val role: String,
+    @SerializedName("created_at") val createdAt: String
+)
+
+data class UserProfileRequest(@SerializedName("user_id") val userId: Int)
+
 data class UserSearchResponseDto(
-    @SerializedName("userId") val userId: Long,
+    @SerializedName("user_id") val userId: Long,
     val username: String,
     val nickname: String,
     val major: String,
-    @SerializedName("studentNumber") val studentNumber: String,
-    @SerializedName("profileImageUrl") val profileImageUrl: String?,
+    @SerializedName("student_number") val studentNumber: String,
+    @SerializedName("profile_image_url") val profileImageUrl: String?,
     val bio: String?,
     val role: String,
-    @SerializedName("createdAt") val createdAt: String
+    @SerializedName("created_at") val createdAt: String
 )
 
 data class ImageResponse(

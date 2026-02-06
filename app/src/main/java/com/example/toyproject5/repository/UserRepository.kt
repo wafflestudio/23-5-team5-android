@@ -432,4 +432,32 @@ class UserRepository @Inject constructor(
             Result.failure(e)
         }
     }
+
+    suspend fun getUserProfile(targetUserId: Int): Result<UserProfileResponse> {
+        return try {
+            // 1. 요청 바디 생성
+            val request = UserProfileRequest(userId = targetUserId)
+
+            // 2. API 호출 (여기서 반환값은 retrofit2.Response 입니다)
+            val response = userApiService.getUserProfile(request)
+
+            // 3. 응답 결과 확인
+            // response가 retrofit2.Response 타입이어야 .isSuccessful 사용 가능합니다.
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) {
+                    // 최종 반환은 코틀린의 Result.success()를 사용합니다.
+                    Result.success(body)
+                } else {
+                    Result.failure(Exception("상대방의 데이터가 비어있습니다."))
+                }
+            } else {
+                // 실패 시 에러 처리
+                Result.failure(Exception("프로필 조회 실패 (코드: ${response.code()})"))
+            }
+        } catch (e: Exception) {
+            // 네트워크 연결 실패 등 예외 처리
+            Result.failure(e)
+        }
+    }
 }
