@@ -42,6 +42,7 @@ data class GroupResponse(
     @SerializedName("leaderId") val leaderId: Int,
     @SerializedName("leader_nickname") val leaderNickname: String,
     @SerializedName("leader_user_name") val leaderUserName: String,
+    @SerializedName("leader_profile_image_url") val leaderProfileImageUrl: String?,
     @SerializedName("is_online") val isOnline: Boolean,
     @SerializedName("location") val location: String,
     @SerializedName("status") val status: String,

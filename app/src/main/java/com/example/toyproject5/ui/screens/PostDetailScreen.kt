@@ -19,13 +19,16 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
 import com.example.toyproject5.viewmodel.GroupViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -210,14 +213,27 @@ fun PostDetailScreen(
                 Box(
                     modifier = Modifier
                         .size(40.dp)
+                        .clip(CircleShape) // 1. 내부의 모든 콘텐츠를 원형으로 자름
                         .background(Color(0xFFD1D5DC), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = currentPost.leaderNickname.take(1).uppercase(),
                         color = Color.White,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
                     )
+
+                    if (!currentPost.leaderProfileImageUrl.isNullOrEmpty()) {
+                        AsyncImage(
+                            model = currentPost.leaderProfileImageUrl,
+                            contentDescription = "방장 프로필",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop,
+                            // 로딩 성공 시 자연스럽게 이미지가 나타나도록 합니다.
+                            // 이미지가 로드되지 않으면 이 레이어는 투명하게 유지되어 아래의 Text가 보입니다.
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
