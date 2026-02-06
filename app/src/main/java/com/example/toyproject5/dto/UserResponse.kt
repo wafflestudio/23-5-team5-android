@@ -60,16 +60,10 @@ data class SocialSignupRequest(
 )
 
 data class SignupResponse(
-    val accessToken: String,
+    @SerializedName("access_token") val accessToken: String,
     val username: String,
     val nickname: String,
     val isVerified: Boolean
-)
-
-data class UserResponse(
-    @SerializedName("accessToken") val accessToken: String,
-    @SerializedName("nickname") val nickname: String,
-    @SerializedName("is_verified") val isVerified: Boolean
 )
 
 data class UserMeResponse(

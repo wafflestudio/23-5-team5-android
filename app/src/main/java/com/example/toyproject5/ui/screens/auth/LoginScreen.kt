@@ -1,6 +1,7 @@
 package com.example.toyproject5.ui.screens.auth
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -81,35 +82,44 @@ fun LoginScreen(
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
+        Log.d("LoginScreen", "구글 로그인 결과 도착: result($result)")
         val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
         try {
             val account = task.getResult(ApiException::class.java)
-            val email = account?.email ?: ""
             val idToken = account?.idToken
+            Log.d("LoginScreen", "계정 확인: email=${account?.email}, idToken 존재여부=${idToken != null}")
 
             if (idToken != null) {
-                // 서버로 바로 던집니다. @snu.ac.kr 체크는 서버가 합니다.
-                viewModel.loginWithGoogle(idToken, email)
+                viewModel.loginWithGoogle(idToken, account.email ?: "")
+            } else {
+                Log.e("LoginScreen", "idToken이 null입니다. Web Client ID 설정을 확인하세요.")
             }
         } catch (e: ApiException) {
-            // 에러 처리 로직
+            // e.statusCode가 10이면 보통 Client ID나 SHA-1 인증 문제입니다.
+            Log.e("LoginScreen", "구글 로그인 실패 에러코드: ${e.statusCode}")
         }
     }
 
     LaunchedEffect(uiState.isLoginSuccess, uiState.isRegisterNeeded) {
+        Log.d("LoginScreen", "LaunchedEffect 트리거됨: success=${uiState.isLoginSuccess}, register=${uiState.isRegisterNeeded}")
         if (uiState.isLoginSuccess) {
             // 1. 이미 가입된 계정인 경우 메인으로 이동
+            Log.d("LoginScreen", "로그인 성공")
             onLoginSuccess()
         } else if (uiState.isRegisterNeeded) {
             // 2. 신규 가입이 필요한 경우 (REGISTER)
             val email = uiState.email ?: ""
             val token = uiState.registerToken ?: ""
 
+            Log.d("LoginScreen", "로그인 필요, email: $email, token: $token")
+
             if (email.endsWith("@snu.ac.kr")) {
                 // 스누메일이면 바로 구글 가입 페이지로
+                Log.d("LoginScreen", "구글 가입 페이지로 이동")
                 onNavigateToGoogleSignup(token, email)
             } else {
                 // 스누메일이 아니면 재학생 인증 페이지로
+                Log.d("LoginScreen", "재학생 인증 페이지로 이동")
                 onNavigateToSocialVerify(token)
             }
 

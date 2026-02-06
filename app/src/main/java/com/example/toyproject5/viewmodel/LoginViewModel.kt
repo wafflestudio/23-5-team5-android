@@ -1,5 +1,6 @@
 package com.example.toyproject5.viewmodel
 
+import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -69,6 +70,7 @@ class LoginViewModel @Inject constructor(
 
     // 구글 로그인
     fun loginWithGoogle(idToken: String, email: String) {
+        Log.d("LoginViewModel", "구글 로그인 시도: idToken=$idToken, email=$email")
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
@@ -76,6 +78,7 @@ class LoginViewModel @Inject constructor(
             val result = userRepository.handleGoogleAuth(idToken, email)
 
             result.onSuccess { response ->
+                Log.d("LoginViewModel", "구글 로그인 결과: $response")
                 if (response.type == "LOGIN") {
                     // 기존 유저: 로그인 성공 상태로 업데이트
                     _uiState.update {
@@ -94,6 +97,7 @@ class LoginViewModel @Inject constructor(
                     ) }
                 }
             }.onFailure { exception ->
+                Log.d("LoginViewModel", "구글 로그인 실패: $exception")
                 _uiState.update { it.copy(
                     isLoading = false,
                     errorMessage = exception.message
