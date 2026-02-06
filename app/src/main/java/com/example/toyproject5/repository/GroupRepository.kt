@@ -32,11 +32,10 @@ class GroupRepository @Inject constructor(
     suspend fun searchGroups(
         categoryId: Int?, 
         keyword: String?, 
-        page: Int? = null, 
-        size: Int? = null, 
-        sort: String? = null
+        cursor: Int? = null,
+        size: Int? = null,
     ): Response<GroupSearchResponse> =
-        apiService.searchGroups(categoryId, keyword, page, size, sort)
+        apiService.searchGroups(categoryId, keyword, cursor, size)
 
     suspend fun searchMyGroups(
         page: Int? = null, 

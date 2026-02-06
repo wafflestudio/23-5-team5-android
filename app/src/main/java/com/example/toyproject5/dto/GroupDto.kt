@@ -53,8 +53,8 @@ data class GroupResponse(
  */
 data class GroupSearchResponse(
     @SerializedName("content") val content: List<GroupResponse>,
-    @SerializedName("nextCursorId") val nextCursorId: Int?,
-    @SerializedName("hasNext") val hasNext: Boolean
+    @SerializedName("next_cursor_id") val nextCursorId: Int?,
+    @SerializedName("has_next") val hasNext: Boolean
 )
 
 data class ErrorResponse(
