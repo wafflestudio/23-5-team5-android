@@ -19,13 +19,16 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
 import com.example.toyproject5.viewmodel.GroupViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -210,14 +213,26 @@ fun PostDetailScreen(
                 Box(
                     modifier = Modifier
                         .size(40.dp)
+                        .clip(CircleShape) // 1. 내부의 모든 콘텐츠를 원형으로 자름
                         .background(Color(0xFFD1D5DC), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = currentPost.leaderNickname.take(1).uppercase(),
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold
-                    )
+                    // 1. 이미지 URL이 있는 경우 AsyncImage를 시도
+                    if (!currentPost.leaderProfileImageUrl.isNullOrEmpty()) {
+                        AsyncImage(
+                            model = currentPost.leaderProfileImageUrl,
+                            contentDescription = "Profile Image",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop // 이미지를 영역에 맞게 꽉 채움
+                        )
+                    } else {
+                        // 2. URL이 없는 경우 기존의 이니셜 텍스트 표시
+                        Text(
+                            text = currentPost.leaderNickname.take(1).uppercase(),
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
