@@ -1,5 +1,6 @@
 package com.example.toyproject5.ui.screens
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -64,8 +65,8 @@ fun PostDetailScreen(
 
     val currentPost = post!!
     val isClosed = currentPost.status != "RECRUITING"
-    val isJoined = joinedGroups.any { it.id == currentPost.id }
-    val isMyPost = currentUserId != null && currentPost.leaderId.toLong() == currentUserId
+    val isJoined by viewModel.isJoined.collectAsState()
+    val isMyPost by viewModel.isMyPost.collectAsState()
     
     val categoryName = when (currentPost.categoryId) {
         1 -> "스터디"
@@ -95,29 +96,33 @@ fun PostDetailScreen(
             ) {
                 Button(
                     onClick = {
-                        if (isJoined) {
-                            viewModel.withdrawFromGroup(currentPost.id)
-                        } else {
-                            viewModel.joinGroup(currentPost.id)
+                        // 방장이 아닐 때만 탈퇴를 진행 가능.
+                        Log.d("PostDetailScreen", "isMyPost: $isMyPost, isJoined: $isJoined")
+                        if (!isMyPost) {
+                            if (isJoined) {
+                                viewModel.withdrawFromGroup(currentPost.id)
+                            } else {
+                                viewModel.joinGroup(currentPost.id)
+                            }
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
-                    enabled = !isClosed && !isMyPost || isJoined, // Allow withdrawing even if closed
+                    enabled = !isMyPost && (!isClosed || isJoined), // Allow withdrawing even if closed
                     colors = ButtonDefaults.buttonColors(
                         containerColor = when {
+                            isMyPost -> Color.Gray
                             isJoined -> Color(0xFFEF4444) // Red for withdraw
                             isClosed -> Color.Gray
-                            isMyPost -> Color.Gray
                             else -> Color(0xFF155DFC)
                         }
                     )
                 ) {
                     Text(
                         text = when {
+                            isMyPost -> "방장은 나갈 수 없습니다."
                             isJoined -> "나가기"
                             isClosed -> "모집 마감"
-                            isMyPost -> "내가 작성한 글"
                             else -> "참여하기"
                         },
                         fontWeight = FontWeight.Bold, 

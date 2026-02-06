@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -49,6 +50,16 @@ class GroupViewModel @Inject constructor(
 
     val currentUserId: StateFlow<Long?> = userRepository.userId
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val isMyPost: StateFlow<Boolean> = combine(currentUserId, _selectedGroup) { userId, group ->
+        if (userId == null || group == null) false
+        else group.leaderId.toLong() == userId
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val isJoined: StateFlow<Boolean> = combine(_joinedGroups, _selectedGroup) { joinedList, group ->
+        if (group == null) false
+        else joinedList.any { it.id == group.id }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     private var nextCursor: Int? = null
     private val _isLastPage = MutableStateFlow(false)
