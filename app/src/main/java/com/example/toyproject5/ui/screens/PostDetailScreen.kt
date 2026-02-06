@@ -217,20 +217,21 @@ fun PostDetailScreen(
                         .background(Color(0xFFD1D5DC), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    // 1. 이미지 URL이 있는 경우 AsyncImage를 시도
+                    Text(
+                        text = currentPost.leaderNickname.take(1).uppercase(),
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+
                     if (!currentPost.leaderProfileImageUrl.isNullOrEmpty()) {
                         AsyncImage(
                             model = currentPost.leaderProfileImageUrl,
-                            contentDescription = "Profile Image",
+                            contentDescription = "방장 프로필",
                             modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop // 이미지를 영역에 맞게 꽉 채움
-                        )
-                    } else {
-                        // 2. URL이 없는 경우 기존의 이니셜 텍스트 표시
-                        Text(
-                            text = currentPost.leaderNickname.take(1).uppercase(),
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
+                            contentScale = ContentScale.Crop,
+                            // 로딩 성공 시 자연스럽게 이미지가 나타나도록 합니다.
+                            // 이미지가 로드되지 않으면 이 레이어는 투명하게 유지되어 아래의 Text가 보입니다.
                         )
                     }
                 }
