@@ -51,7 +51,8 @@ class GroupViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     private var currentPage = 0
-    private var isLastPage = false
+    private val _isLastPage = MutableStateFlow(false)
+    val isLastPage: StateFlow<Boolean> = _isLastPage.asStateFlow()
     private val pageSize = 10
     private var searchJob: Job? = null
 
@@ -100,10 +101,10 @@ class GroupViewModel @Inject constructor(
         if (isRefresh) {
             searchJob?.cancel()
             currentPage = 0
-            isLastPage = false
+            _isLastPage.value = false
             _isLoading.value = true
         } else {
-            if (isLastPage || _isMoreLoading.value || _isLoading.value) {
+            if (_isLastPage.value || _isMoreLoading.value || _isLoading.value) {
                 return
             }
             _isMoreLoading.value = true
@@ -127,8 +128,9 @@ class GroupViewModel @Inject constructor(
                         _groups.value = currentList + filteredNewGroups
                     }
 
-                    isLastPage = searchResponse?.last ?: true
-                    if (!isLastPage) {
+                    val hasNext = searchResponse?.hasNext ?: false
+                    _isLastPage.value = !hasNext
+                    if (hasNext) {
                         currentPage++
                     }
                 } else {
