@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -24,6 +23,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.toyproject5.data.categoryList
+import com.example.toyproject5.data.getCategoryName
+import com.example.toyproject5.data.getSubcategoryName
 import com.example.toyproject5.dto.GroupResponse
 import com.example.toyproject5.viewmodel.GroupViewModel
 
@@ -36,6 +38,7 @@ fun RecruitmentScreen(
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategoryId by remember { mutableStateOf<Int?>(null) }
+    var selectedSubCategoryId by remember { mutableStateOf<Int?>(null) }
     
     val groups by viewModel.groups.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -45,9 +48,10 @@ fun RecruitmentScreen(
     val listState = rememberLazyListState()
 
     // Fetch groups on initial load and when search/category changes
-    LaunchedEffect(searchQuery, selectedCategoryId) {
+    LaunchedEffect(searchQuery, selectedCategoryId, selectedSubCategoryId) {
         viewModel.searchGroups(
-            categoryId = selectedCategoryId, 
+            categoryId = selectedCategoryId,
+            subCategoryId = selectedSubCategoryId,
             keyword = searchQuery.ifBlank { null },
             isRefresh = true
         )
@@ -72,19 +76,22 @@ fun RecruitmentScreen(
         if (shouldLoadMore.value) {
             viewModel.searchGroups(
                 categoryId = selectedCategoryId,
+                subCategoryId = selectedSubCategoryId,
                 keyword = searchQuery.ifBlank { null },
                 isRefresh = false
             )
         }
     }
 
-    val categories = listOf(
-        CategoryItem("전체", null),
-        CategoryItem("스터디", 1),
-        CategoryItem("고시", 2),
-        CategoryItem("취준", 3),
-        CategoryItem("대외활동", 4)
-    )
+    val categories = listOf(CategoryItem("전체", null)) + categoryList.map { CategoryItem(it.name, it.id) }
+
+    val currentSubcategories = remember(selectedCategoryId) {
+        if (selectedCategoryId == null) emptyList()
+        else {
+            val cat = categoryList.find { it.id == selectedCategoryId }
+            cat?.subcategories?.map { CategoryItem(it.name, it.id) } ?: emptyList()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -138,7 +145,10 @@ fun RecruitmentScreen(
             items(categories, key = { it.name }) { category ->
                 val isSelected = selectedCategoryId == category.id
                 Surface(
-                    onClick = { selectedCategoryId = category.id },
+                    onClick = { 
+                        selectedCategoryId = category.id
+                        selectedSubCategoryId = null // Reset subcategory when category changes
+                    },
                     color = if (isSelected) Color(0xFF155DFC) else Color(0xFFF3F4F6),
                     shape = RoundedCornerShape(20.dp),
                 ) {
@@ -148,6 +158,47 @@ fun RecruitmentScreen(
                         color = if (isSelected) Color.White else Color(0xFF364153),
                         fontSize = 14.sp
                     )
+                }
+            }
+        }
+
+        // Subcategory Chips (Show only if a category is selected and not "전체")
+        if (selectedCategoryId != null && currentSubcategories.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                item {
+                    val isAllSelected = selectedSubCategoryId == null
+                    Surface(
+                        onClick = { selectedSubCategoryId = null },
+                        color = if (isAllSelected) Color(0xFF8B5CF6) else Color(0xFFF3F4F6),
+                        shape = RoundedCornerShape(20.dp),
+                    ) {
+                        Text(
+                            text = "전체",
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            color = if (isAllSelected) Color.White else Color(0xFF4A5565),
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+                items(currentSubcategories, key = { it.id!! }) { sub ->
+                    val isSelected = selectedSubCategoryId == sub.id
+                    Surface(
+                        onClick = { selectedSubCategoryId = sub.id },
+                        color = if (isSelected) Color(0xFF8B5CF6) else Color(0xFFF3F4F6),
+                        shape = RoundedCornerShape(20.dp),
+                    ) {
+                        Text(
+                            text = sub.name,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            color = if (isSelected) Color.White else Color(0xFF4A5565),
+                            fontSize = 12.sp
+                        )
+                    }
                 }
             }
         }
@@ -162,7 +213,7 @@ fun RecruitmentScreen(
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(text = error ?: "알 수 없는 오류가 발생했습니다.", color = Color.Red)
-                    Button(onClick = { viewModel.searchGroups(selectedCategoryId, searchQuery.ifBlank { null }) }) {
+                    Button(onClick = { viewModel.searchGroups(selectedCategoryId, selectedSubCategoryId, searchQuery.ifBlank { null }) }) {
                         Text("다시 시도")
                     }
                 }
@@ -220,23 +271,32 @@ fun GroupCardItem(group: GroupResponse, onClick: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Surface(
-                    color = Color(0xFFDBEAFE),
-                    shape = RoundedCornerShape(4.dp)
-                ) {
-                    val categoryName = when (group.categoryId) {
-                        1 -> "스터디"
-                        2 -> "고시"
-                        3 -> "취준"
-                        4 -> "대외활동"
-                        else -> "기타"
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Surface(
+                        color = Color(0xFFDBEAFE),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            text = getCategoryName(group.categoryId),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            color = Color(0xFF1447E6),
+                            fontSize = 12.sp
+                        )
                     }
-                    Text(
-                        text = categoryName,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        color = Color(0xFF1447E6),
-                        fontSize = 12.sp
-                    )
+                    val subcategoryName = getSubcategoryName(group.categoryId, group.subCategoryId)
+                    if (subcategoryName != null) {
+                        Surface(
+                            color = Color(0xFFF3F4F6),
+                            shape = RoundedCornerShape(4.dp)
+                        ) {
+                            Text(
+                                text = subcategoryName,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                color = Color(0xFF4A5565),
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
                 }
                 Text(text = group.createdAt?.take(10) ?: "", color = Color(0xFF6A7282), fontSize = 12.sp)
             }

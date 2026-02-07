@@ -30,12 +30,13 @@ class GroupRepository @Inject constructor(
         apiService.withdrawFromGroup(GroupJoinRequest(groupId))
 
     suspend fun searchGroups(
-        categoryId: Int?, 
+        categoryId: Int?,
+        subCategoryId: Int?,
         keyword: String?, 
         cursor: Int? = null,
         size: Int? = null,
     ): Response<GroupSearchResponse> =
-        apiService.searchGroups(categoryId, keyword, cursor, size)
+        apiService.searchGroups(categoryId, subCategoryId, keyword, cursor, size)
 
     suspend fun searchMyGroups(
         page: Int? = null, 

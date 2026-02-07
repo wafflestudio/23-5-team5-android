@@ -21,6 +21,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.toyproject5.data.getCategoryName
+import com.example.toyproject5.data.getSubcategoryName
 import com.example.toyproject5.dto.GroupResponse
 import com.example.toyproject5.viewmodel.GroupViewModel
 
@@ -162,13 +164,6 @@ fun MyPostCard(
     onDelete: () -> Unit
 ) {
     val isClosed = group.status != "RECRUITING"
-    val categoryName = when(group.categoryId) {
-        1 -> "스터디"
-        2 -> "고시"
-        3 -> "취준"
-        4 -> "대외활동"
-        else -> "기타"
-    }
 
     Card(
         modifier = Modifier
@@ -184,16 +179,46 @@ fun MyPostCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Surface(
-                    color = if (isClosed) Color(0xFFF3F4F6) else Color(0xFFF3E8FF),
-                    shape = RoundedCornerShape(4.dp)
-                ) {
-                    Text(
-                        text = if (isClosed) "마감됨" else categoryName,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        color = if (isClosed) Color(0xFF6A7282) else Color(0xFF8200DB),
-                        fontSize = 12.sp
-                    )
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    if (isClosed) {
+                        Surface(
+                            color = Color(0xFFF3F4F6),
+                            shape = RoundedCornerShape(4.dp)
+                        ) {
+                            Text(
+                                text = "마감됨",
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                color = Color(0xFF6A7282),
+                                fontSize = 12.sp
+                            )
+                        }
+                    } else {
+                        Surface(
+                            color = Color(0xFFF3E8FF),
+                            shape = RoundedCornerShape(4.dp)
+                        ) {
+                            Text(
+                                text = getCategoryName(group.categoryId),
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                color = Color(0xFF8200DB),
+                                fontSize = 12.sp
+                            )
+                        }
+                        val subcategoryName = getSubcategoryName(group.categoryId, group.subCategoryId)
+                        if (subcategoryName != null) {
+                            Surface(
+                                color = Color(0xFFF3F4F6),
+                                shape = RoundedCornerShape(4.dp)
+                            ) {
+                                Text(
+                                    text = subcategoryName,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    color = Color(0xFF4A5565),
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+                    }
                 }
                 Text(text = group.createdAt?.take(10) ?: "", color = Color(0xFF6A7282), fontSize = 12.sp)
             }
