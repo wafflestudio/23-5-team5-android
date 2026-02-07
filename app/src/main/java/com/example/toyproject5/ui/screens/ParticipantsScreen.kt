@@ -101,6 +101,7 @@ fun ParticipantsScreen(groupId: Int, groupName: String, onBack: () -> Unit, navC
                         ParticipantItem(
                             nickname = participant.nickname,
                             email = participant.username,
+                            profileImageUrl = participant.profileImageUrl,
                             onItemClick = {
                                 // 참여자의 고유 ID를 가지고 프로필 화면으로 이동!
                                 Log.d("ParticipantsScreen", "User ID: ${participant.userId}")
