@@ -5,7 +5,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -28,8 +27,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.foundation.clickable
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.example.toyproject5.ui.components.ReviewSection
 import com.example.toyproject5.viewmodel.MyPageViewModel
 import com.example.toyproject5.viewmodel.PingViewModel
 
@@ -46,8 +47,9 @@ fun MyPageScreen(pingViewModel: PingViewModel = hiltViewModel(),
     var showBioDialog by remember { mutableStateOf(false) }
 
     val uiState by myPageViewModel.uiState.collectAsState()
-    val pingMessage by pingViewModel.pingState.collectAsState()
     val isLoggedOut by myPageViewModel.isLoggedOut.collectAsState()
+    val reviews by myPageViewModel.reviews.collectAsState()
+    val isReviewsLoading by myPageViewModel.isReviewsLoading.collectAsState()
 
     // 파일 처리
     val context = LocalContext.current
@@ -109,6 +111,11 @@ fun MyPageScreen(pingViewModel: PingViewModel = hiltViewModel(),
                 onMajorEditClick = { showMajorDialog = true },
                 onBioEditClick = { showBioDialog = true }
             )
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // 리뷰 섹션
+            ReviewSection("내가 받은 리뷰", reviews, isReviewsLoading)
 
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -360,25 +367,13 @@ fun LogoutButton(onLogoutClick: () -> Unit) {
 @Composable
 fun MyPageFooter() {
     Column(
-        modifier = Modifier.fillMaxWidth().background(Color(0xFFF9FAFB)).padding(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(text = "대학생 팀원 모집 플랫폼", fontSize = 14.sp, color = Color(0xFF4A5565))
         Text(text = "v1.0.0", fontSize = 12.sp, color = Color(0xFF6A7282))
-    }
-}
-
-/** 서버 통신 테스트 섹션 */
-@Composable
-fun PingPongTestSection(pingMessage: String, onPingClick: () -> Unit) {
-    Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(text = "Server Response: $pingMessage", fontSize = 14.sp, color = Color.Gray)
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(onClick = onPingClick) {
-                Text(text = "서버에 Ping 보내기")
-            }
-        }
     }
 }
 
