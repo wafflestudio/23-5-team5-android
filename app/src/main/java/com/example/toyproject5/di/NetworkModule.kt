@@ -5,6 +5,7 @@ import com.example.toyproject5.network.AuthInterceptor
 import com.example.toyproject5.network.PingApiService
 import com.example.toyproject5.network.UserApiService
 import com.example.toyproject5.network.GroupApiService
+import com.example.toyproject5.network.ReviewApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -111,5 +112,11 @@ object NetworkModule {
     @Singleton
     fun provideGroupApiService(@Named("DefaultRetrofit") retrofit: Retrofit): GroupApiService {
         return retrofit.create(GroupApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideReviewApiService(@Named("DefaultRetrofit") retrofit: Retrofit): ReviewApiService {
+        return retrofit.create(ReviewApiService::class.java)
     }
 }
