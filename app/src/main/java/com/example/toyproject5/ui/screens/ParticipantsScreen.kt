@@ -1,5 +1,6 @@
 package com.example.toyproject5.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -102,6 +103,7 @@ fun ParticipantsScreen(groupId: Int, groupName: String, onBack: () -> Unit, navC
                             email = participant.username,
                             onItemClick = {
                                 // 참여자의 고유 ID를 가지고 프로필 화면으로 이동!
+                                Log.d("ParticipantsScreen", "User ID: ${participant.userId}")
                                 navController.navigate(NavRoute.UserProfile.createRoute(participant.userId.toInt()))
                             }
                         )

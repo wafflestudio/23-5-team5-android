@@ -93,7 +93,7 @@ data class UserProfileResponse(
 data class UserProfileRequest(@SerializedName("user_id") val userId: Int)
 
 data class UserSearchResponseDto(
-    @SerializedName("user_id") val userId: Long,
+    @SerializedName("id") val userId: Long,
     val username: String,
     val nickname: String,
     val major: String,
