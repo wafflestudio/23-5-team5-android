@@ -17,7 +17,7 @@ sealed class NavRoute(val route: String, val title: String = "", val icon: Image
     object Signup : NavRoute("signup", "회원가입", Icons.Default.List) // 일반 회원가입
 
     object UserProfile : NavRoute("userProfile/{userId}") {
-        fun createRoute(userId: Int) = "userProfile/$userId"
+        fun createRoute(userId: Long) = "userProfile/$userId"
     }
 
 

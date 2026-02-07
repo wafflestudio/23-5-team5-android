@@ -5,7 +5,7 @@
 - **Base URL**: `http://43.203.97.212:8080`
 - **Version**: 1.0
 - **Content-Type**: `application/json` (except for file upload endpoints)
-- **Date**: 2026-02-05
+- **Date**: 2026-02-07
 
 ---
 
@@ -239,6 +239,44 @@ Get a redirect to the profile image URL.
 #### Response: `302 Found`
 
 Redirects to the profile image URL, or returns `404 Not Found` if no profile image exists.
+
+---
+
+### 8. Get Other User's Profile
+
+Retrieve another user's profile information by user ID.
+
+- **Endpoint**: `POST /api/users/search/profile`
+- **Authentication**: Required (JWT)
+- **Content-Type**: `application/json`
+
+#### Request Body
+
+```json
+{
+  "user_id": 123
+}
+```
+
+| Field   | Type   | Required | Description                        |
+| ------- | ------ | -------- | ---------------------------------- |
+| user_id | number | Yes      | ID of the user to retrieve profile |
+
+#### Response: `200 OK`
+
+```json
+{
+  "userId": 123,
+  "username": "string",
+  "major": "string",
+  "studentNumber": "string",
+  "nickname": "string",
+  "profileImageUrl": "https://...",
+  "bio": "string",
+  "role": "USER",
+  "createdAt": "2026-01-25T10:30:00Z"
+}
+```
 
 ---
 
@@ -487,6 +525,7 @@ Create a new study group.
   "leaderNickname": "John",
   "leaderBio": "Backend developer",
   "leaderUserName": "john@snu.ac.kr",
+  "leaderProfileImageUrl": "https://s3.ap-northeast-2.amazonaws.com/team5-bucket/profiles/user_5.jpg",
   "isOnline": true,
   "location": "Zoom",
   "status": "RECRUITING",
@@ -656,6 +695,7 @@ GET /groups/search?categoryId=1&keyword=algorithm&cursorId=null&size=10
       "leaderNickname": "John",
       "leaderBio": "Backend developer",
       "leaderUserName": "john@snu.ac.kr",
+      "leaderProfileImageUrl": "https://s3.ap-northeast-2.amazonaws.com/team5-bucket/profiles/user_5.jpg",
       "isOnline": true,
       "location": "Zoom",
       "status": "RECRUITING",
@@ -672,6 +712,7 @@ GET /groups/search?categoryId=1&keyword=algorithm&cursorId=null&size=10
       "leaderNickname": "Jane",
       "leaderBio": "CS student",
       "leaderUserName": "jane@snu.ac.kr",
+      "leaderProfileImageUrl": "https://s3.ap-northeast-2.amazonaws.com/team5-bucket/profiles/user_12.jpg",
       "isOnline": false,
       "location": "Seoul Campus",
       "status": "RECRUITING",
@@ -716,6 +757,7 @@ Get all groups created by the authenticated user (groups where user is the leade
       "leaderNickname": "MyNickname",
       "leaderBio": "Backend developer",
       "leaderUserName": "me@snu.ac.kr",
+      "leaderProfileImageUrl": "https://s3.ap-northeast-2.amazonaws.com/team5-bucket/profiles/user_501.jpg",
       "isOnline": true,
       "location": "Google Meet",
       "status": "RECRUITING",
@@ -732,6 +774,7 @@ Get all groups created by the authenticated user (groups where user is the leade
       "leaderNickname": "MyNickname",
       "leaderBio": "Backend developer",
       "leaderUserName": "me@snu.ac.kr",
+      "leaderProfileImageUrl": "https://s3.ap-northeast-2.amazonaws.com/team5-bucket/profiles/user_501.jpg",
       "isOnline": true,
       "location": "Slack/Github",
       "status": "RECRUITING",
@@ -776,6 +819,7 @@ Get all groups the authenticated user has joined as a member (not as a leader) u
       "leaderNickname": "TeamLeader",
       "leaderBio": "Senior developer",
       "leaderUserName": "leader@snu.ac.kr",
+      "leaderProfileImageUrl": "https://s3.ap-northeast-2.amazonaws.com/team5-bucket/profiles/user_501.jpg",
       "isOnline": false,
       "location": "Gangnam Station Cafe",
       "status": "RECRUITING",
@@ -792,6 +836,7 @@ Get all groups the authenticated user has joined as a member (not as a leader) u
       "leaderNickname": "PropertyExpert",
       "leaderBio": "Investment professional",
       "leaderUserName": "expert@snu.ac.kr",
+      "leaderProfileImageUrl": "https://s3.ap-northeast-2.amazonaws.com/team5-bucket/profiles/user_44.jpg",
       "isOnline": false,
       "location": "Bundang, Seongnam",
       "status": "EXPIRED",
@@ -1157,7 +1202,7 @@ All errors follow a consistent format:
     - Check `totalPages`, `totalElements`, `first`, `last` for pagination state
 
 11. **Group Operations**:
-    - Group responses now include leader information (nickname, bio, username)
+    - Group responses now include leader information (nickname, bio, username, profile image URL)
     - Group leader ID can be used to determine if current user is the leader
     - Only leaders can delete or expire groups
     - Check `capacity` field: `null` means unlimited capacity
@@ -1178,6 +1223,11 @@ All errors follow a consistent format:
     - Only the original reviewer can update or delete their review
     - Search supports filtering by groupId, reviewerId, or revieweeId
     - Reviews use page-based pagination (not cursor-based)
+
+14. **User Profile Access**:
+    - You can view your own profile with `GET /api/users/me`
+    - You can view other users' profiles with `POST /api/users/search/profile` by providing their user ID
+    - Both endpoints return the same profile structure
 
 ---
 

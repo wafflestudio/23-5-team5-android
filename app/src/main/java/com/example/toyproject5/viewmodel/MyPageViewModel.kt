@@ -5,6 +5,8 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.toyproject5.dto.ReviewResponse
+import com.example.toyproject5.repository.ReviewRepository
 import com.example.toyproject5.repository.UserRepository
 import com.example.toyproject5.util.UriUtil
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -28,6 +30,7 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class MyPageViewModel @Inject constructor(
     private val userRepository: UserRepository,
+    private val reviewRepository: ReviewRepository,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -44,25 +47,55 @@ class MyPageViewModel @Inject constructor(
     private val _eventFlow = MutableSharedFlow<MyPageEvent>()
     val eventFlow = _eventFlow.asSharedFlow()
 
+    private val _reviews = MutableStateFlow<List<ReviewResponse>>(emptyList())
+    val reviews: StateFlow<List<ReviewResponse>> = _reviews.asStateFlow()
+
+    private val _isReviewsLoading = MutableStateFlow(false)
+    val isReviewsLoading: StateFlow<Boolean> = _isReviewsLoading.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            val userId = userRepository.userId.first()
+            if (userId != null) {
+                fetchReviews(userId)
+            }
+        }
+    }
+
+    private fun fetchReviews(userId: Long) {
+        viewModelScope.launch {
+            _isReviewsLoading.value = true
+            try {
+                val response = reviewRepository.searchReviews(revieweeId = userId)
+                if (response.isSuccessful) {
+                    _reviews.value = response.body()?.content ?: emptyList()
+                }
+            } catch (e: Exception) {
+                Log.e("MyPageViewModel", "Failed to fetch reviews", e)
+            } finally {
+                _isReviewsLoading.value = false
+            }
+        }
+    }
+
     val uiState: StateFlow<MyPageState> = combine(
         listOf(
             userRepository.nickname,       // 0
             userRepository.email,          // 1
             userRepository.profileImageUri, // 2
-            userRepository.major,          // 3 (Repository에도 필드가 있다고 가정)
-            userRepository.bio,            // 4 (Repository에도 필드가 있다고 가정)
+            userRepository.major,          // 3
+            userRepository.bio,            // 4
             _tempNickname,                 // 5
             _tempImageUri,                 // 6
             _tempMajor,                    // 7
             _tempBio,                      // 8
             _errorMessage                  // 9
         )
-    ) { array: Array<Any?> -> // 중요: 파라미터를 6개가 아닌 'array' 하나로 받습니다.
+    ) { array: Array<Any?> ->
 
         if (isLoggingOut) {
             return@combine this@MyPageViewModel.uiState.value
         }
-        // 여기서 타입을 하나씩 지정해줍니다 (Casting)
         val nickname = array[0] as String
         val email = array[1] as String
         val savedUri = array[2] as String?
@@ -89,8 +122,6 @@ class MyPageViewModel @Inject constructor(
         initialValue = MyPageState()
     )
 
-    // 업데이트 성공 및 실패에 따른 토스트
-    // UI에서 발생할 일회성 사건들을 정의한 클래스
     sealed class MyPageEvent {
         data class ShowToast(val message: String) : MyPageEvent()
     }
@@ -127,13 +158,11 @@ class MyPageViewModel @Inject constructor(
     private var isLoggingOut = false
 
     fun logout() {
-
         if (isLoggingOut) return
         isLoggingOut = true
-
         viewModelScope.launch {
             userRepository.logout()
-            _isLoggedOut.value = true // 로그아웃 성공 신호!
+            _isLoggedOut.value = true
         }
     }
 
@@ -144,16 +173,12 @@ class MyPageViewModel @Inject constructor(
         // [선조치] 서버 응답을 기다리지 않고 UI 변경
         _tempNickname.value = newName
         _errorMessage.value = null
-
         viewModelScope.launch {
             try {
                 val result = userRepository.updateNickname(newName)
-
-
                 result.onSuccess {
                     // 성공시 토스트
                     _eventFlow.emit(MyPageEvent.ShowToast("성공적으로 저장되었습니다"))
-
                 }.onFailure { exception ->
                     // [실패 시 롤백]
                     _tempNickname.value = null
@@ -179,16 +204,13 @@ class MyPageViewModel @Inject constructor(
         // [선조치] 서버 응답을 기다리지 않고 UI 변경
         _tempMajor.value = newMajor
         _errorMessage.value = null
-
         viewModelScope.launch {
             try {
                 val result = userRepository.updateMajor(newMajor)
-
                 result.onSuccess {
                     _eventFlow.emit(MyPageEvent.ShowToast("전공이 성공적으로 저장되었습니다"))
-
                 }.onFailure {
-                    _tempMajor.value = null // 실패 시 롤백
+                    _tempMajor.value = null
                     _errorMessage.value = "전공 수정에 실패했습니다."
                     _eventFlow.emit(MyPageEvent.ShowToast("전공 수정에 실패했습니다."))
                 }
@@ -196,9 +218,8 @@ class MyPageViewModel @Inject constructor(
                 _tempMajor.value = null
                 _errorMessage.value = "네트워크 오류가 발생했습니다."
                 _eventFlow.emit(MyPageEvent.ShowToast("저장 실패: 네트워크 오류가 발생했습니다."))
-
             } finally {
-                _tempMajor.value = null // 성공/실패 여부와 상관없이 임시는 비움 (원본 데이터가 Flow로 올 것이므로)
+                _tempMajor.value = null
             }
         }
     }
@@ -209,11 +230,9 @@ class MyPageViewModel @Inject constructor(
         // [선조치] 서버 응답을 기다리지 않고 UI 변경
         _tempBio.value = newBio
         _errorMessage.value = null
-
         viewModelScope.launch {
             try {
                 val result = userRepository.updateBio(newBio)
-
                 result.onSuccess {
                     _eventFlow.emit(MyPageEvent.ShowToast("자기소개가 성공적으로 저장되었습니다"))
                 }.onFailure {
@@ -237,7 +256,6 @@ class MyPageViewModel @Inject constructor(
     }
 }
 
-// MyPageState 클래스
 data class MyPageState(
     val nickname: String = "임시 닉네임",
     val email: String = "ss@university.ac.kr",
