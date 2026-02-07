@@ -44,6 +44,7 @@ interface GroupApiService {
     @GET("api/groups/search")
     suspend fun searchGroups(
         @Query("categoryId") categoryId: Int? = null,
+        @Query("subCategoryId") subCategoryId: Int? = null,
         @Query("keyword") keyword: String? = null,
         @Query("cursorId") cursor: Int? = null, // page 대신 cursor 사용
         @Query("size") size: Int? = null,
