@@ -127,10 +127,10 @@ fun MainScreen(onLogout: () -> Unit) {
             composable(
                 route = NavRoute.UserProfile.route,
                 arguments = listOf(
-                    navArgument("userId") { type = NavType.LongType }
+                    navArgument("userId") { type = NavType.IntType }
                 )
             ) { backStackEntry ->
-                val userId = backStackEntry.arguments?.getLong("userId") ?: 0L
+                val userId = backStackEntry.arguments?.getInt("userId") ?: 0 // getInt로 변경
                 UserProfileScreen(
                     userId = userId,
                     onBackClick = { navController.popBackStack() }
