@@ -108,7 +108,7 @@ class GroupViewModel @Inject constructor(
         }
     }
 
-    fun searchGroups(categoryId: Int? = null, keyword: String? = null, isRefresh: Boolean = true) {
+    fun searchGroups(categoryId: Int? = null, subCategoryId: Int? = null, keyword: String? = null, isRefresh: Boolean = true) {
         if (isRefresh) {
             searchJob?.cancel()
             nextCursor = null
@@ -123,7 +123,7 @@ class GroupViewModel @Inject constructor(
 
         searchJob = viewModelScope.launch {
             try {
-                val response = repository.searchGroups(categoryId, keyword, cursor = nextCursor, size = pageSize)
+                val response = repository.searchGroups(categoryId, subCategoryId, keyword, cursor = nextCursor, size = pageSize)
                 if (response.isSuccessful) {
                     val searchResponse = response.body()
                     val newGroups = searchResponse?.content ?: emptyList()

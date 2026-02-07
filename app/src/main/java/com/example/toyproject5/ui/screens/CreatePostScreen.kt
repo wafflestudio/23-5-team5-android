@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.toyproject5.data.categoryList
 import com.example.toyproject5.dto.GroupCreateRequest
 import com.example.toyproject5.viewmodel.GroupViewModel
 
@@ -29,13 +30,14 @@ fun CreatePostScreen(
     val errorMessage by viewModel.error.collectAsState()
     
     var groupName by remember { mutableStateOf("") }
-    var selectedCategory by remember { mutableStateOf("스터디") }
+    var selectedCategoryId by remember { mutableStateOf(categoryList[0].id) }
+    var selectedSubCategoryId by remember { mutableStateOf(categoryList[0].subcategories[0].id) }
     var capacity by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var isOnline by remember { mutableStateOf(false) }
 
-    val categories = listOf("스터디", "고시", "취준", "대외활동")
+    val selectedCategory = categoryList.find { it.id == selectedCategoryId } ?: categoryList[0]
 
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
@@ -60,14 +62,8 @@ fun CreatePostScreen(
                                 val request = GroupCreateRequest(
                                     groupName = groupName,
                                     description = description,
-                                    categoryId = when (selectedCategory) {
-                                        "스터디" -> 1
-                                        "고시" -> 2
-                                        "취준" -> 3
-                                        "대외활동" -> 4
-                                        else -> 1
-                                    },
-                                    subCategoryId = 1,
+                                    categoryId = selectedCategoryId,
+                                    subCategoryId = selectedSubCategoryId,
                                     capacity = capacity.toIntOrNull(),
                                     isOnline = isOnline,
                                     location = location
@@ -107,33 +103,55 @@ fun CreatePostScreen(
             Spacer(modifier = Modifier.height(8.dp))
             
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    CategoryButton(
-                        text = "스터디",
-                        isSelected = selectedCategory == "스터디",
-                        onClick = { selectedCategory = "스터디" },
-                        modifier = Modifier.weight(1f)
-                    )
-                    CategoryButton(
-                        text = "고시",
-                        isSelected = selectedCategory == "고시",
-                        onClick = { selectedCategory = "고시" },
-                        modifier = Modifier.weight(1f)
-                    )
+                categoryList.chunked(2).forEach { rowCategories ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        rowCategories.forEach { category ->
+                            CategoryButton(
+                                text = category.name,
+                                isSelected = selectedCategoryId == category.id,
+                                onClick = { 
+                                    selectedCategoryId = category.id
+                                    selectedSubCategoryId = category.subcategories[0].id
+                                },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        if (rowCategories.size == 1) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    CategoryButton(
-                        text = "취준",
-                        isSelected = selectedCategory == "취준",
-                        onClick = { selectedCategory = "취준" },
-                        modifier = Modifier.weight(1f)
-                    )
-                    CategoryButton(
-                        text = "대외활동",
-                        isSelected = selectedCategory == "대외활동",
-                        onClick = { selectedCategory = "대외활동" },
-                        modifier = Modifier.weight(1f)
-                    )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Subcategory Selection
+            Row {
+                Text(
+                    text = "상세 카테고리",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(text = " *", color = Color.Red, fontSize = 14.sp)
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                selectedCategory.subcategories.chunked(2).forEach { rowSubcategories ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        rowSubcategories.forEach { subcategory ->
+                            CategoryButton(
+                                text = subcategory.name,
+                                isSelected = selectedSubCategoryId == subcategory.id,
+                                onClick = { selectedSubCategoryId = subcategory.id },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        if (rowSubcategories.size == 1) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
                 }
             }
 
