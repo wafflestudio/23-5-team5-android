@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -16,16 +17,21 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import com.example.toyproject5.ui.NavRoute
 import com.example.toyproject5.viewmodel.ParticipantsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ParticipantsScreen(groupId: Int, groupName: String, onBack: () -> Unit, viewModel: ParticipantsViewModel = hiltViewModel()) {
+fun ParticipantsScreen(groupId: Int, groupName: String, onBack: () -> Unit, navController: NavController, viewModel: ParticipantsViewModel = hiltViewModel()) {
 
     LaunchedEffect(groupId) {
         viewModel.fetchParticipants(groupId)
@@ -93,7 +99,11 @@ fun ParticipantsScreen(groupId: Int, groupName: String, onBack: () -> Unit, view
                     items(participants) { participant ->
                         ParticipantItem(
                             nickname = participant.nickname,
-                            email = participant.username
+                            email = participant.username,
+                            onItemClick = {
+                                // 참여자의 고유 ID를 가지고 프로필 화면으로 이동!
+                                navController.navigate(NavRoute.UserProfile.createRoute(participant.userId.toInt()))
+                            }
                         )
                     }
                 }
@@ -103,12 +113,13 @@ fun ParticipantsScreen(groupId: Int, groupName: String, onBack: () -> Unit, view
 }
 
 @Composable
-fun ParticipantItem(nickname: String, email: String) {
+fun ParticipantItem(nickname: String, email: String, profileImageUrl: String? = null, onItemClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(Color.White, RoundedCornerShape(10.dp))
             .border(1.dp, Color(0xFFE5E7EB), RoundedCornerShape(10.dp))
+            .clickable { onItemClick() }
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -118,11 +129,21 @@ fun ParticipantItem(nickname: String, email: String) {
                 .background(Color(0xFFD1D5DC), CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = nickname.take(1),
-                color = Color.White,
-                fontWeight = FontWeight.Bold
-            )
+            // [수정 포인트] 이미지가 있으면 이미지, 없으면 첫 글자 텍스트
+            if (!profileImageUrl.isNullOrEmpty()) {
+                AsyncImage(
+                    model = profileImageUrl,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize().clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Text(
+                    text = nickname.take(1),
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
         Spacer(modifier = Modifier.width(12.dp))
         Column {

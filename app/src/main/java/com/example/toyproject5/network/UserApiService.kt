@@ -3,6 +3,8 @@ package com.example.toyproject5.network
 import com.example.toyproject5.dto.CursorResponse
 import com.example.toyproject5.dto.ImageResponse
 import com.example.toyproject5.dto.UserMeResponse
+import com.example.toyproject5.dto.UserProfileRequest
+import com.example.toyproject5.dto.UserProfileResponse
 import com.example.toyproject5.dto.UserSearchResponseDto
 import okhttp3.MultipartBody
 import retrofit2.Response
@@ -36,4 +38,10 @@ interface UserApiService {
         @Query("cursorId") cursorId: Long? = null,
         @Query("size") size: Int = 10
     ): Response<CursorResponse<UserSearchResponseDto>>
+
+    @POST("api/users/search/profile")
+    suspend fun getUserProfile(
+        @Body request: UserProfileRequest
+    ): Response<UserProfileResponse>
+
 }

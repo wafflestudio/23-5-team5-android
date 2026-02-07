@@ -101,7 +101,8 @@ fun MainScreen(onLogout: () -> Unit) {
                 PostDetailScreen(
                     postId = postId, 
                     onBack = { navController.popBackStack() },
-                    viewModel = groupViewModel
+                    viewModel = groupViewModel,
+                    navController = navController
                 )
             }
 
@@ -118,7 +119,21 @@ fun MainScreen(onLogout: () -> Unit) {
                 ParticipantsScreen(
                     groupId = postId.toInt(),
                     groupName = selectedGroup?.groupName ?: "참여 신청자",
-                    onBack = { navController.popBackStack() }
+                    onBack = { navController.popBackStack() },
+                    navController = navController
+                )
+            }
+
+            composable(
+                route = NavRoute.UserProfile.route,
+                arguments = listOf(
+                    navArgument("userId") { type = NavType.IntType }
+                )
+            ) { backStackEntry ->
+                val userId = backStackEntry.arguments?.getInt("userId") ?: 0 // getInt로 변경
+                UserProfileScreen(
+                    userId = userId,
+                    onBackClick = { navController.popBackStack() }
                 )
             }
         }
