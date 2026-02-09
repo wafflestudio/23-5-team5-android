@@ -164,12 +164,12 @@ fun MyJoinedGroupsScreen(
             reviewToEdit = reviewToEdit,
             revieweeName = revieweeForNewReview?.nickname ?: reviewToEdit?.revieweeNickname ?: "",
             onDismiss = { showReviewDialog = false },
-            onSubmit = { rating, comment ->
+            onSubmit = { comment ->
                 selectedGroupForReviews?.let { group ->
                     if (reviewToEdit != null) {
-                        viewModel.updateReview(group.id, reviewToEdit!!.id, rating, comment)
+                        viewModel.updateReview(group.id, reviewToEdit!!.id,  comment)
                     } else if (revieweeForNewReview != null) {
-                        viewModel.createReview(group.id, revieweeForNewReview!!.userId, rating, comment)
+                        viewModel.createReview(group.id, revieweeForNewReview!!.userId,  comment)
                     }
                 }
                 showReviewDialog = false
@@ -223,14 +223,14 @@ fun MemberReviewItem(
             }
             if (existingReview != null) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    repeat(5) { index ->
-                        Icon(
-                            imageVector = if (index < existingReview.rating) Icons.Filled.Star else Icons.Outlined.Star,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = Color(0xFFFFD700)
-                        )
-                    }
+//                    repeat(5) { index ->
+//                        Icon(
+//                            imageVector = if (index < existingReview.rating) Icons.Filled.Star else Icons.Outlined.Star,
+//                            contentDescription = null,
+//                            modifier = Modifier.size(14.dp),
+//                            tint = Color(0xFFFFD700)
+//                        )
+//                    }
                     if (!existingReview.comment.isNullOrBlank()) {
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(text = existingReview.comment, fontSize = 12.sp, color = Color.Gray, maxLines = 1)
@@ -259,9 +259,9 @@ fun ReviewDialog(
     reviewToEdit: ReviewResponse?,
     revieweeName: String,
     onDismiss: () -> Unit,
-    onSubmit: (Int, String) -> Unit
+    onSubmit: (/*Int, */String) -> Unit
 ) {
-    var rating by remember { mutableIntStateOf(reviewToEdit?.rating ?: 5) }
+    //var rating by remember { mutableIntStateOf(reviewToEdit?.rating ?: 5) }
     var comment by remember { mutableStateOf(reviewToEdit?.comment ?: "") }
 
     AlertDialog(
@@ -269,23 +269,23 @@ fun ReviewDialog(
         title = { Text(text = if (reviewToEdit == null) "$revieweeName 님 리뷰 작성" else "$revieweeName 님 리뷰 수정") },
         text = {
             Column {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    repeat(5) { index ->
-                        val isSelected = index < rating
-                        IconButton(onClick = { rating = index + 1 }) {
-                            Icon(
-                                imageVector = if (isSelected) Icons.Filled.Star else Icons.Outlined.Star,
-                                contentDescription = null,
-                                tint = if (isSelected) Color(0xFFFFD700) else Color.LightGray,
-                                modifier = Modifier.size(32.dp)
-                            )
-                        }
-                    }
-                }
-                Spacer(modifier = Modifier.height(16.dp))
+//                Row(
+//                    modifier = Modifier.fillMaxWidth(),
+//                    horizontalArrangement = Arrangement.Center
+//                ) {
+//                    repeat(5) { index ->
+//                        val isSelected = index < rating
+//                        IconButton(onClick = { rating = index + 1 }) {
+//                            Icon(
+//                                imageVector = if (isSelected) Icons.Filled.Star else Icons.Outlined.Star,
+//                                contentDescription = null,
+//                                tint = if (isSelected) Color(0xFFFFD700) else Color.LightGray,
+//                                modifier = Modifier.size(32.dp)
+//                            )
+//                        }
+//                    }
+//                }
+//                Spacer(modifier = Modifier.height(16.dp))
                 OutlinedTextField(
                     value = comment,
                     onValueChange = { comment = it },
@@ -296,7 +296,7 @@ fun ReviewDialog(
             }
         },
         confirmButton = {
-            Button(onClick = { onSubmit(rating, comment) }) {
+            Button(onClick = { onSubmit(/*rating, */ comment) }) {
                 Text("확인")
             }
         },

@@ -198,16 +198,16 @@ fun ReviewItem(review: ReviewResponse) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(text = review.reviewerNickname ?: "익명", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Row {
-                    repeat(5) { index ->
-                        Icon(
-                            imageVector = if (index < review.rating) Icons.Default.Star else Icons.Outlined.Star,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = Color(0xFFFFD700)
-                        )
-                    }
-                }
+//                Row {
+//                    repeat(5) { index ->
+//                        Icon(
+//                            imageVector = if (index < review.rating) Icons.Default.Star else Icons.Outlined.Star,
+//                            contentDescription = null,
+//                            modifier = Modifier.size(14.dp),
+//                            tint = Color(0xFFFFD700)
+//                        )
+//                    }
+//                }
             }
             if (!review.comment.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(8.dp))

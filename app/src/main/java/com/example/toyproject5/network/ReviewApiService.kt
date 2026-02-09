@@ -21,13 +21,17 @@ interface ReviewApiService {
         @Body request: DeleteReviewRequest
     ): Response<Unit>
 
-    @GET("api/reviews/search")
-    suspend fun searchReviews(
+    @GET("api/reviews/search/unique")
+    suspend fun getReview(
         @Query("groupId") groupId: Int? = null,
         @Query("reviewerId") reviewerId: Long? = null,
+        @Query("revieweeId") revieweeId: Long? = null
+    ): Response<ReviewResponse>
+
+    @GET("api/reviews/search")
+    suspend fun searchReviews(
         @Query("revieweeId") revieweeId: Long? = null,
-        @Query("page") page: Int = 0,
+        @Query("cursorId") cursor: Int = 0,
         @Query("size") size: Int = 10,
-        @Query("sort") sort: String = "createdAt"
     ): Response<PageResponse<ReviewResponse>>
 }

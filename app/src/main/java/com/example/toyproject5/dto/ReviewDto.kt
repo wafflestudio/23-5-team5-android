@@ -3,16 +3,15 @@ package com.example.toyproject5.dto
 import com.google.gson.annotations.SerializedName
 
 data class CreateReviewRequest(
-    @SerializedName("groupId") val groupId: Int,
-    @SerializedName("revieweeId") val revieweeId: Long,
-    @SerializedName("rating") val rating: Int,
-    @SerializedName("comment") val comment: String?
+    @SerializedName("group_id") val groupId: Int,
+    @SerializedName("reviewer_id") val reviewerId: Long,
+    @SerializedName("reviewee_id") val revieweeId: Long,
+    @SerializedName("description") val comment: String?
 )
 
 data class UpdateReviewRequest(
     @SerializedName("reviewId") val reviewId: Long,
-    @SerializedName("rating") val rating: Int?,
-    @SerializedName("comment") val comment: String?
+    @SerializedName("description") val comment: String?
 )
 
 data class DeleteReviewRequest(
@@ -26,10 +25,9 @@ data class ReviewResponse(
     @SerializedName("reviewerNickname") val reviewerNickname: String?,
     @SerializedName("revieweeId") val revieweeId: Long,
     @SerializedName("revieweeNickname") val revieweeNickname: String?,
-    @SerializedName("rating") val rating: Int,
-    @SerializedName("comment") val comment: String?,
+    @SerializedName("description") val comment: String?,
     @SerializedName("createdAt") val createdAt: String,
-    @SerializedName("updatedAt") val updatedAt: String
+    @SerializedName("updatedAt") val updatedAt: String?
 )
 
 data class PageResponse<T>(

@@ -433,7 +433,7 @@ class UserRepository @Inject constructor(
         }
     }
 
-    suspend fun getUserProfile(targetUserId: Int): Result<UserProfileResponse> {
+    suspend fun getUserProfile(targetUserId: Long): Result<UserProfileResponse> {
         return try {
             // 1. 요청 바디 생성
             val request = UserProfileRequest(userId = targetUserId)

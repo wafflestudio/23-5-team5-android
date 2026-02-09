@@ -13,6 +13,13 @@ class ReviewRepository @Inject constructor(
     suspend fun createReview(request: CreateReviewRequest): Response<ReviewResponse> =
         apiService.createReview(request)
 
+    suspend fun getReview(
+        groupId: Int? = null,
+        reviewerId: Long? = null,
+        revieweeId: Long? = null,
+    ): Response<ReviewResponse> =
+        apiService.getReview(groupId, reviewerId, revieweeId)
+
     suspend fun updateReview(request: UpdateReviewRequest): Response<ReviewResponse> =
         apiService.updateReview(request)
 
@@ -20,12 +27,9 @@ class ReviewRepository @Inject constructor(
         apiService.deleteReview(DeleteReviewRequest(reviewId))
 
     suspend fun searchReviews(
-        groupId: Int? = null,
-        reviewerId: Long? = null,
         revieweeId: Long? = null,
-        page: Int = 0,
+        cursor: Int = 0,
         size: Int = 10,
-        sort: String = "createdAt"
     ): Response<PageResponse<ReviewResponse>> =
-        apiService.searchReviews(groupId, reviewerId, revieweeId, page, size, sort)
+        apiService.searchReviews(revieweeId, cursor, size)
 }

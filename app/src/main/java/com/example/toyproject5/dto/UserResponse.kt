@@ -79,7 +79,7 @@ data class UserMeResponse(
 )
 
 data class UserProfileResponse(
-    @SerializedName("user_id") val userId: Long,
+    val userId: Long,
     val username: String,
     val major: String?,
     @SerializedName("student_number") val studentNumber: String?,
@@ -90,7 +90,7 @@ data class UserProfileResponse(
     @SerializedName("created_at") val createdAt: String
 )
 
-data class UserProfileRequest(@SerializedName("user_id") val userId: Int)
+data class UserProfileRequest(@SerializedName("user_id") val userId: Long)
 
 data class UserSearchResponseDto(
     @SerializedName("user_id") val userId: Long,

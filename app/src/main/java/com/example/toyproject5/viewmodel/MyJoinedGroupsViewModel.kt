@@ -10,8 +10,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -84,42 +86,61 @@ class MyJoinedGroupsViewModel @Inject constructor(
             val userId = _currentUserId.value ?: userRepository.userId.first()
             if (userId != null) {
                 _currentUserId.value = userId
-                val reviewsResponse = reviewRepository.searchReviews(groupId = group.id, reviewerId = userId)
-                if (reviewsResponse.isSuccessful) {
-                    _myReviews.value = reviewsResponse.body()?.content ?: emptyList()
+                val reviewsList = mutableListOf<ReviewResponse>()
+                fetchedParticipants.forEach { member ->
+                    // 자기 자신을 제외한 나머지 멤버들에 대해서만 조회
+                    if (member.userId != userId) {
+                        val response = reviewRepository.getReview(
+                            groupId = group.id,
+                            reviewerId = userId,
+                            revieweeId = member.userId
+                        )
+
+                        // 리뷰가 성공적으로 조회된 경우(작성된 리뷰가 있는 경우) 리스트에 추가
+                        if (response.isSuccessful && response.body() != null) {
+                            response.body()?.let { reviewsList.add(it) }
+                        }
+                    }
                 }
+                _myReviews.value = reviewsList
             }
             _isLoading.value = false
         }
     }
 
-    fun createReview(groupId: Int, revieweeId: Long, rating: Int, comment: String?) {
+    fun createReview(groupId: Int, revieweeId: Long, comment: String?) {
         viewModelScope.launch {
-            val request = CreateReviewRequest(groupId, revieweeId, rating, comment)
-            val response = reviewRepository.createReview(request)
-            if (response.isSuccessful) {
-                _toastMessage.emit("리뷰가 작성되었습니다.")
-                // Find the group object to reload correctly
-                _myJoinedGroups.value?.content?.find { it.id == groupId }?.let {
-                    loadParticipantsAndReviews(it)
+            val userId = _currentUserId.value ?: userRepository.userId.first()
+            if (userId != null){
+                val request = CreateReviewRequest(groupId, userId, revieweeId, comment)
+                val response = reviewRepository.createReview(request)
+                if (response.isSuccessful) {
+                    _toastMessage.emit("리뷰가 작성되었습니다.")
+                    // Find the group object to reload correctly
+                    _myJoinedGroups.value?.content?.find { it.id == groupId }?.let {
+                        loadParticipantsAndReviews(it)
+                    }
+                } else {
+                    _toastMessage.emit("리뷰 작성에 실패했습니다.")
                 }
-            } else {
-                _toastMessage.emit("리뷰 작성에 실패했습니다.")
             }
         }
     }
 
-    fun updateReview(groupId: Int, reviewId: Long, rating: Int?, comment: String?) {
+    fun updateReview(groupId: Int, reviewId: Long, comment: String?) {
         viewModelScope.launch {
-            val request = UpdateReviewRequest(reviewId, rating, comment)
-            val response = reviewRepository.updateReview(request)
-            if (response.isSuccessful) {
-                _toastMessage.emit("리뷰가 수정되었습니다.")
-                _myJoinedGroups.value?.content?.find { it.id == groupId }?.let {
-                    loadParticipantsAndReviews(it)
+            val userId = _currentUserId.value ?: userRepository.userId.first()
+            if (userId != null) {
+                val request = UpdateReviewRequest(reviewId, comment)
+                val response = reviewRepository.updateReview(request)
+                if (response.isSuccessful) {
+                    _toastMessage.emit("리뷰가 수정되었습니다.")
+                    _myJoinedGroups.value?.content?.find { it.id == groupId }?.let {
+                        loadParticipantsAndReviews(it)
+                    }
+                } else {
+                    _toastMessage.emit("리뷰 수정에 실패했습니다.")
                 }
-            } else {
-                _toastMessage.emit("리뷰 수정에 실패했습니다.")
             }
         }
     }

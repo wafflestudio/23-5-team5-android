@@ -38,7 +38,7 @@ class UserProfileViewModel @Inject constructor(
             _uiState.value = UserProfileUiState.Loading
             
             // Fetch profile
-            val result = userRepository.getUserProfile(userId.toInt()) // Repository still uses Int, but we use Long in VM for consistency with NavRoute
+            val result = userRepository.getUserProfile(userId) // Repository still uses Int, but we use Long in VM for consistency with NavRoute
             // 1. result.isSuccess 로 성공 여부를 확인합니다.
             if (result.isSuccess) {
                 // 2. getOrNull()을 통해 결과값(UserProfileResponse)을 가져옵니다.
